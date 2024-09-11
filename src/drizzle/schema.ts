@@ -25,19 +25,15 @@ export const mediaTypeEnum = pgEnum('mediaType', [
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey(),
-  profilePic: uuid('profilePic').references(() => media.id),
-  firstName: varchar('firstName'),
-  lastName: varchar('lastName'),
-  password: varchar('password'),
+  uid: varchar('uid').notNull(),
   email: varchar('email').unique().notNull(),
   institutionId: uuid('institutionId').references(() => institutions.id),
-  isEmailVerified: boolean('isEmailVerified').default(false),
 });
 
 export const institutions = pgTable('institutions', {
-  id: uuid('id').primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name').notNull(),
-  logo: varchar('logo'),
+  logo: varchar('logo').references(() => media),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt')
     .defaultNow()
@@ -45,7 +41,7 @@ export const institutions = pgTable('institutions', {
 });
 
 export const media = pgTable('media', {
-  id: uuid('id').primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(),
   type: mediaTypeEnum('type'),
   url: varchar('url'),
   uploader: uuid('uploadedBy')
@@ -58,7 +54,7 @@ export const media = pgTable('media', {
 });
 
 export const tests = pgTable('tests', {
-  id: uuid('id').primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(),
   creatorId: uuid('creatorId').references(() => users.id),
   isOffline: boolean('isOffline').default(false),
   offlinePrintCount: integer('offlinePrintCount'),
@@ -73,7 +69,7 @@ export const tests = pgTable('tests', {
 });
 
 export const questions = pgTable('questions', {
-  id: uuid('id').primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(),
   testId: uuid('testId').references(() => tests.id),
   body: text('body').notNull(),
   type: questionTypeEnum('type').notNull(),
@@ -99,5 +95,5 @@ export const testRelations = relations(tests, ({ many }) => ({
 }));
 
 export const mediaRelations = relations(media, ({ one }) => ({
-  uploader: one(users, { fields: [users.id], references: [users.id] }),
+  uploader: one(users),
 }));

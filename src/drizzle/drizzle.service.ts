@@ -6,6 +6,6 @@ import { DRIZZLE_ASYNC_PROVIDER } from './drizzle.options';
 @Injectable()
 export class DrizzleService {
   constructor(
-    @Inject(DRIZZLE_ASYNC_PROVIDER) readonly db: NodePgDatabase<typeof schema>,
+    @Inject(DRIZZLE_ASYNC_PROVIDER) public db: NodePgDatabase<typeof schema>,
   ) {}
 }
