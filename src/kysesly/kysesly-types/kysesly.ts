@@ -26,6 +26,7 @@ export type questions = {
     testId: string;
     type: QuestionType;
     options: string[];
+    points: Generated<number>;
     correctAnswer: string | null;
     body: string;
     mediaId: string | null;

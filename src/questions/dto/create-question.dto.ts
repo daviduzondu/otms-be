@@ -7,6 +7,7 @@ import {
   IsString,
   ArrayNotEmpty,
   Validate,
+  IsNumber,
 } from 'class-validator';
 import { QuestionType } from '../../kysesly/kysesly-types/enums';
 import { CustomIsInArray } from '../../validators/custom-validator';
@@ -20,6 +21,9 @@ export class CreateQuestionDto {
 
   @IsString()
   body: string;
+
+  @IsNumber({ allowNaN: false })
+  points: string;
 
   @ValidateIf((o) => o.type === QuestionType.mcq)
   @IsArray({ message: 'Options must be an array for MCQ questions' })

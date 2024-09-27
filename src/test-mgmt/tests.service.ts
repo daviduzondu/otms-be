@@ -37,15 +37,25 @@ export class TestsService {
   async getTest(id: string, req: Request) {
     const test = await this.db
       .selectFrom('tests')
-      .selectAll()
-      .where('id', '=', id)
-      .where('creatorId', '=', (req as any).user.id)
+      .selectAll('tests') // Select all fields from 'tests'
+      .where('tests.id', '=', id)
+      .where('tests.creatorId', '=', (req as any).user.id)
       .executeTakeFirstOrThrow(() => {
         return new CustomException('Test not found', HttpStatus.NOT_FOUND);
       });
+
+    const questions = await this.db
+      .selectFrom('questions')
+      .selectAll('questions') // Select all fields from 'questions'
+      .where('questions.testId', '=', id)
+      .execute();
+
     return {
       message: 'Test retrieved successfully',
-      data: test,
+      data: {
+        ...test,
+        questions, // Include the array of questions in the response
+      },
     };
   }
 }

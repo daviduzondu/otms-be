@@ -1,7 +1,8 @@
 export const QuestionType = {
     mcq: "mcq",
     trueOrFalse: "trueOrFalse",
-    shortAnswer: "shortAnswer"
+    shortAnswer: "shortAnswer",
+    essay: "essay"
 } as const;
 export type QuestionType = (typeof QuestionType)[keyof typeof QuestionType];
 export const MediaType = {
