@@ -23,11 +23,6 @@ export class AuthService {
   async registerUserWithEmailAndPassword(
     CreateLocalUserDto: CreateLocalUserDto,
   ) {
-    await new Promise<void>((resolve) =>
-      setTimeout(() => {
-        resolve();
-      }, 4000),
-    );
     const exists = await this.userService.getUserRecord({
       email: CreateLocalUserDto.email,
     });

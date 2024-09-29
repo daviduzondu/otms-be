@@ -91,8 +91,8 @@ model media {
  id        String      @id @default(dbgenerated("gen_random_uuid()"))
  type      MediaType
  url       String
- uploader  String
- user      users       @relation("UserUploads", fields: [uploader], references: [id])
+ userId    String
+ user      users       @relation("UserUploads", fields: [userId], references: [id])
  users     users[]     @relation("UserProfilePhoto")
  questions questions[] // One media can be used in multiple questions
  createdAt DateTime    @default(now())
@@ -101,8 +101,8 @@ model media {
 
 model tests {
  id                  String        @id @default(dbgenerated("gen_random_uuid()"))
- creatorId           String
- user                users         @relation(fields: [creatorId], references: [id])
+ userId              String
+ user                users         @relation(fields: [userId], references: [id])
  title               String
  instructions        String?
  printCount          Int?
@@ -130,10 +130,12 @@ model questions {
  test          tests        @relation(fields: [testId], references: [id])
  type          QuestionType
  options       String[]
+ index         Int          @default(0)
  points        Int          @default(10)
  correctAnswer String?
  body          String
  mediaId       String?
+ isDeleted     Boolean      @default(false)
  media         media?       @relation(fields: [mediaId], references: [id])
  createdAt     DateTime     @default(now())
  updatedAt     DateTime     @default(now()) @updatedAt

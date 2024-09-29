@@ -17,7 +17,7 @@ export type media = {
     id: GeneratedAlways<string>;
     type: MediaType;
     url: string;
-    uploader: string;
+    userId: string;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
@@ -26,16 +26,18 @@ export type questions = {
     testId: string;
     type: QuestionType;
     options: string[];
+    index: Generated<number>;
     points: Generated<number>;
     correctAnswer: string | null;
     body: string;
     mediaId: string | null;
+    isDeleted: Generated<boolean>;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
 export type tests = {
     id: GeneratedAlways<string>;
-    creatorId: string;
+    userId: string;
     title: string;
     instructions: string | null;
     printCount: number | null;

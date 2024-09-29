@@ -31,6 +31,9 @@ export class CreateQuestionDto {
   @IsOptional()
   options: string[];
 
+  @IsNumber()
+  index: number;
+
   @ValidateIf((o) => o.type === QuestionType.mcq)
   @Validate(CustomIsInArray, ['options'], {
     message: 'Correct answer must be one of the options',

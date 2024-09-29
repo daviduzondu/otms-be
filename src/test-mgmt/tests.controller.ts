@@ -1,5 +1,6 @@
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Delete,
   Get,
@@ -9,17 +10,27 @@ import {
   Put,
   Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CreateTestDto } from './dto/create-test.dto';
 import { Request } from 'express';
-import { TestsService } from './tests.service';
+import { TestService } from './tests.service';
+import CheckOwnership from '../decorators/check-ownership.decorator';
+import { OwnerGuard } from '../guards/owner.guard';
 
+@UseInterceptors(ClassSerializerInterceptor)
 @Controller('tests')
 export class TestsController {
-  constructor(private readonly testService: TestsService) {}
+  constructor(private readonly testService: TestService) {}
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @CheckOwnership({
+    table: 'tests',
+    column: 'id',
+    foreignKey: 'userId',
+    pathOnReq: ['params', 'id'],
+  })
+  @UseGuards(JwtAuthGuard, OwnerGuard)
   async getTest(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     return await this.testService.getTest(id, req);
   }

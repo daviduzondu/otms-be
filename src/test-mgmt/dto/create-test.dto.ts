@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
@@ -45,4 +46,10 @@ export class CreateTestDto {
 
   @IsBoolean()
   randomizeQuestions: boolean;
+
+  @Exclude()
+  createdAt: string;
+
+  @Exclude()
+  updatedAt: string;
 }

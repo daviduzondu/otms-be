@@ -18,8 +18,8 @@ export class UsersService {
     const user = await this.db
       .selectFrom('users')
       .leftJoin('institutions', 'users.institutionId', 'institutions.id')
-      .leftJoin('media', 'media.uploader', 'users.id')
-      .leftJoin('tests', 'tests.creatorId', 'users.id')
+      .leftJoin('media', 'media.userId', 'users.id')
+      .leftJoin('tests', 'tests.userId', 'users.id')
       .select([
         'users.id',
         'users.firstName',

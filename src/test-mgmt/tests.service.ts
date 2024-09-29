@@ -9,17 +9,26 @@ import { CustomException } from '../exceptions/custom.exception';
 const { customAlphabet } = require('fix-esm').require('nanoid');
 
 @Injectable()
-export class TestsService {
+export class TestService {
   constructor(@InjectKysesly() private db: Database) {}
 
   private async generateTestCode() {
     return customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 21)(7);
   }
 
+  // async getTestRecordByUser(testId: string, req: any) {
+  //   return await this.db
+  //     .selectFrom('tests')
+  //     .selectAll()
+  //     .where('id', '=', testId)
+  //     .where('tests.userId', '=', (req as any).user.id)
+  //     .executeTakeFirstOrThrow();
+  // }
+
   async createNewTest(payload: CreateTestDto, req: Request) {
     Object.assign(payload, {
       code: await this.generateTestCode(),
-      creatorId: (req as any).user.id,
+      userId: (req as any).user.id,
     } as tests);
 
     const test = await this.db
@@ -39,7 +48,7 @@ export class TestsService {
       .selectFrom('tests')
       .selectAll('tests') // Select all fields from 'tests'
       .where('tests.id', '=', id)
-      .where('tests.creatorId', '=', (req as any).user.id)
+      .where('tests.userId', '=', (req as any).user.id)
       .executeTakeFirstOrThrow(() => {
         return new CustomException('Test not found', HttpStatus.NOT_FOUND);
       });
@@ -47,7 +56,11 @@ export class TestsService {
     const questions = await this.db
       .selectFrom('questions')
       .selectAll('questions') // Select all fields from 'questions'
-      .where('questions.testId', '=', id)
+      .where('testId', '=', id)
+      .where((eb) => {
+        return eb('isDeleted', '=', false).or('isDeleted', '=', null);
+      })
+      .orderBy('index asc')
       .execute();
 
     return {
