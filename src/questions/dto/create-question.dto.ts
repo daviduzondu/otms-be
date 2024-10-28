@@ -1,13 +1,14 @@
 import {
+  ArrayNotEmpty,
   IsArray,
   IsEnum,
-  IsOptional,
-  IsUUID,
-  ValidateIf,
-  IsString,
-  ArrayNotEmpty,
-  Validate,
+  IsNotEmpty,
   IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Validate,
+  ValidateIf,
 } from 'class-validator';
 import { QuestionType } from '../../kysesly/kysesly-types/enums';
 import { CustomIsInArray } from '../../validators/custom-validator';
@@ -20,6 +21,7 @@ export class CreateQuestionDto {
   type: QuestionType;
 
   @IsString()
+  @IsNotEmpty()
   body: string;
 
   @IsNumber({ allowNaN: false })
@@ -30,9 +32,6 @@ export class CreateQuestionDto {
   @ArrayNotEmpty({ message: 'Options cannot be empty for MCQ questions' })
   @IsOptional()
   options: string[];
-
-  @IsNumber()
-  index: number;
 
   @ValidateIf((o) => o.type === QuestionType.mcq)
   @Validate(CustomIsInArray, ['options'], {

@@ -1,15 +1,27 @@
-import { IsNumber, IsUUID } from 'class-validator';
+import {
+  IsUUID,
+  IsNumber,
+  ValidateNested,
+  ArrayNotEmpty,
+  IsArray,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class UpdateQuestionIndexDto {
+class ItemDto {
   @IsUUID()
-  sourceId: string;
+  id: string;
 
   @IsNumber()
-  sourceIndex: number;
+  index: number;
 
   @IsUUID()
-  destinationId: string;
+  testId: string;
+}
 
-  @IsNumber()
-  destinationIndex: number;
+export class UpdateQuestionOrderDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => ItemDto)
+  questions: ItemDto[];
 }

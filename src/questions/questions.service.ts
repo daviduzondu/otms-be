@@ -3,7 +3,7 @@ import { InjectKysesly } from '../kysesly/decorators/inject-repository';
 import { Database } from '../kysesly/database';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { TestService } from '../test-mgmt/tests.service';
-import { UpdateQuestionIndexDto } from './dto/update-question-index.dto';
+import { UpdateQuestionOrderDto } from './dto/update-question-index.dto';
 
 @Injectable()
 export class QuestionsService {
@@ -19,13 +19,24 @@ export class QuestionsService {
     //     HttpStatus.NOT_FOUND,
     //   );
     // });
+    const { totalQuestions } = await this.db
+      .selectFrom('questions')
+      .where('testId', '=', payload.testId)
+      .where('isDeleted', '=', false)
+      .select(({ fn }) => fn.count('id').as('totalQuestions'))
+      .executeTakeFirst();
 
     const question = await this.db
       .insertInto('questions')
-      .values(payload as any)
+      .values(
+        Object.assign(payload as any, {
+          index: Number(totalQuestions) > 0 ? Number(totalQuestions) + 1 : 0,
+        }),
+      )
       .returningAll()
-      .execute();
+      .executeTakeFirst();
 
+    console.log(question);
     return {
       message: 'Question added to test successfully',
       data: question,
@@ -58,28 +69,22 @@ export class QuestionsService {
     };
   }
 
-  async updateQuestionIndex({
-    destinationIndex,
-    destinationId,
-    sourceIndex,
-    sourceId,
-  }: UpdateQuestionIndexDto) {
-    // Update the destination question index
-    await this.db
-      .updateTable('questions')
-      .set({ index: destinationIndex })
-      .where('id', '=', destinationId)
-      .execute();
+  async updateQuestionOrder(updateQuestionsDto: UpdateQuestionOrderDto) {
+    const { questions } = updateQuestionsDto;
+    // Loop through the questions array and update each question's index
+    for (const question of questions) {
+      const { id, index, testId } = question;
 
-    // Update the source question index
-    await this.db
-      .updateTable('questions')
-      .set({ index: sourceIndex })
-      .where('id', '=', sourceId)
-      .execute();
+      await this.db
+        .updateTable('questions')
+        .set({ index })
+        .where('testId', '=', testId)
+        .where('id', '=', id)
+        .execute();
+    }
 
     return {
-      message: 'Update applied',
+      message: 'Update applied to all questions',
     };
   }
 }

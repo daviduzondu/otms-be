@@ -23,6 +23,12 @@ import { OwnerGuard } from '../guards/owner.guard';
 @Controller('tests')
 export class TestsController {
   constructor(private readonly testService: TestService) {}
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async getTests(@Req() req: Request) {
+    return await this.testService.getAllTests(req);
+  }
+
   @Get(':id')
   @CheckOwnership({
     table: 'tests',

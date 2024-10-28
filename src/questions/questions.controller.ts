@@ -14,7 +14,7 @@ import { CreateQuestionDto } from './dto/create-question.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import CheckOwnership from '../decorators/check-ownership.decorator';
 import { OwnerGuard } from '../guards/owner.guard';
-import { UpdateQuestionIndexDto } from './dto/update-question-index.dto';
+import { UpdateQuestionOrderDto } from './dto/update-question-index.dto';
 
 @Controller('questions')
 export class QuestionsController {
@@ -68,8 +68,8 @@ export class QuestionsController {
     foreignKey: 'userId',
     pathOnReq: ['body', 'testId'],
   })
-  async updateIndex(@Body() updateQuestionIndexDto: UpdateQuestionIndexDto) {
-    return await this.questionsService.updateQuestionIndex(
+  async updateIndex(@Body() updateQuestionIndexDto: UpdateQuestionOrderDto) {
+    return await this.questionsService.updateQuestionOrder(
       updateQuestionIndexDto,
     );
   }

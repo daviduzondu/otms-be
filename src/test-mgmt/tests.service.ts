@@ -43,6 +43,20 @@ export class TestService {
     };
   }
 
+  async getAllTests(req: Request) {
+    await new Promise((res) => setTimeout(() => res(null), 1200));
+    const tests = await this.db
+      .selectFrom('tests')
+      .selectAll('tests')
+      .where('userId', '=', (req.user as any).id)
+      .execute();
+
+    return {
+      message: 'Tests retrieved successfully',
+      data: tests,
+    };
+  }
+
   async getTest(id: string, req: Request) {
     const test = await this.db
       .selectFrom('tests')
