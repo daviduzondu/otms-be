@@ -1,1 +1,2 @@
 export const CONNECTION = 'CONNECTION';
+export const BREVO_INSTANCE = 'BREVO_INSTANCE';

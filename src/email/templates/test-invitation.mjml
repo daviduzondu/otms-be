@@ -1,0 +1,75 @@
+<mjml>
+    <mj-head>
+        <mj-title>OTMS Test Invitation</mj-title>
+        <mj-font name="Arial" href="https://fonts.googleapis.com/css?family=Arial" />
+        <mj-attributes>
+            <mj-all font-family="Arial, Helvetica, sans-serif" />
+            <mj-text font-size="16px" line-height="1.5" color="#4a5568" />
+        </mj-attributes>
+    </mj-head>
+    <mj-body background-color="#f8fafc">
+        <mj-wrapper background-color="#ffffff" border-radius="12px" padding="20px">
+            <!-- Header Section -->
+            <mj-section padding="20px" background-color="#3182ce">
+                <mj-column>
+                    <mj-text align="center" color="#f0f8ff">OTMS</mj-text>
+                </mj-column>
+            </mj-section>
+
+            <!-- Invitation Text Section -->
+            <mj-section padding="40px 30px 20px">
+                <mj-column>
+                    <mj-text font-size="24px" font-weight="bold" color="#2d3748" align="center" padding-bottom="10px">You've Been Invited to Take a Test</mj-text>
+                    <mj-text font-size="16px" color="#4a5568" align="left" padding="20px 0 0">
+                        Hello <strong style="color: #2b6cb0;">{{required studentName}}</strong>,
+                    </mj-text>
+                    <mj-text font-size="16px" color="#4a5568" align="left" padding="20px 0 0">
+                        Your teacher, <strong style="color: #2b6cb0;">{{required teacherName}}</strong>, has invited you to take the following test:
+                    </mj-text>
+                    <mj-text font-size="20px" font-weight="bold" color="#2b6cb0" align="center" padding="20px">{{required   testName}}</mj-text>
+
+                    <mj-button href="{{required testUrl}}" background-color="#4299e1" color="#ffffff" font-size="18px" font-weight="bold" border-radius="8px">Start Test</mj-button>
+
+                    <mj-text font-size="16px" color="#718096" align="left" padding="20px 0 0">
+                        If the button above doesn't work, copy and paste this link into your browser:
+                    </mj-text>
+                    <mj-text font-size="16px" color="#4299e1" align="left" padding="10px 0" >
+                        <a href="{{required testUrl}}" style="text-decoration: underline;">{{required testUrl}}</a>
+                    </mj-text>
+                </mj-column>
+            </mj-section>
+
+            <!-- Reminders Section -->
+            <mj-section background-color="#edf2f7" border-radius="12px">
+                <mj-column>
+                    <mj-text font-size="20px" font-weight="bold" color="#2d3748">Important Reminders:</mj-text>
+                    <mj-text font-size="16px" color="#4a5568">
+                        <ul style="list-style: circle">
+                            <li>Ensure you have a stable internet connection</li>
+                            <li>Find a quiet place free from distractions</li>
+                            <li>Read all instructions carefully before starting</li>
+                            <li>Contact your teacher if you encounter any issues</li>
+                        </ul>
+                    </mj-text>
+                </mj-column>
+            </mj-section>
+
+            <!-- Footer Section -->
+            <mj-section>
+                <mj-column>
+                    <mj-text font-size="16px" color="#4a5568" align="left">All the best,</mj-text>
+                    <mj-text font-size="16px" color="#4a5568" align="left">David Uzondu (OTMS Team)</mj-text>
+                </mj-column>
+            </mj-section>
+
+            <!-- Legal Notice Section -->
+            <mj-section background-color="#2d3748" padding="20px 30px">
+                <mj-column>
+                    <mj-text font-size="14px" color="#a0aec0" align="center">© 2024 Online Test Management System (OTMS). All rights reserved.</mj-text>
+                    <mj-text font-size="14px" color="#a0aec0" align="center" padding-top="10px">This is an automated message. Please do not reply to this email.</mj-text>
+                </mj-column>
+            </mj-section>
+
+        </mj-wrapper>
+    </mj-body>
+</mjml>

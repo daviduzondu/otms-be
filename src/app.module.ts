@@ -11,6 +11,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { KyseslyModule } from './kysesly/kysesly.module';
 import { TestsModule } from './test-mgmt/tests.module';
 import { QuestionsModule } from './questions/questions.module';
+import { EmailModule } from './email/email.module';
+import { EmailService } from './email/email.service';
 
 @Module({
   imports: [
@@ -34,8 +36,9 @@ import { QuestionsModule } from './questions/questions.module';
     KyseslyModule,
     TestsModule,
     QuestionsModule,
+    EmailModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AuthService],
+  providers: [AppService, AuthService, EmailService],
 })
 export class AppModule {}

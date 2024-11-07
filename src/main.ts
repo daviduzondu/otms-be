@@ -3,11 +3,12 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { TransformInterceptor } from './interceptors/global.interceptor';
 import { config } from 'dotenv';
-
+import { NestExpressApplication } from '@nestjs/platform-express';
 config();
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
   app.setGlobalPrefix('api', { exclude: ['/', 'api'] });
   app.enableCors();
   app.useGlobalPipes(
