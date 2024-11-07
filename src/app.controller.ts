@@ -14,18 +14,18 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  // @Get('send-mail')
-  // async sendMail() {
-  //   return await this.emailService.sendEmail({
-  //     to: [{ email: 'davidclement216@gmail.com', name: 'David Uzondu' }],
-  //     subject: 'Hello!',
-  //     templateName: 'test-invitation',
-  //     context: {
-  //       studentName: 'John Doe',
-  //       teacherName: 'Ms. Smith',
-  //       testName: 'Math Test - Chapter 1',
-  //       testUrl: 'https://example.com/test-link',
-  //     },
-  //   });
-  // }
+  @Get('send-mail')
+  async sendMail() {
+    return await this.emailService.sendEmail({
+      to: [{ email: 'daviduzondu@duck.com', name: 'David Uzondu' }],
+      subject: 'You have been invited to take a test!',
+      templateName: 'test-invitation',
+      context: {
+        studentName: 'John Doe',
+        teacherName: 'Ms. Smith',
+        testName: 'Math Test - Chapter 1',
+        testUrl: 'https://example.com/test-link',
+      },
+    });
+  }
 }
