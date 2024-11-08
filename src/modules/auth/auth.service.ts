@@ -4,7 +4,7 @@ import { Database } from '../kysesly/database';
 import * as bcrypt from 'bcrypt';
 import { CreateLocalUserDto } from './dto/create-local-user.dto';
 import { UsersService } from '../users/users.service';
-import { CustomException } from '../exceptions/custom.exception';
+import { CustomException } from '../../exceptions/custom.exception';
 import { LocalUserLoginDto } from './dto/local-user-login.dto';
 import { JwtService } from '@nestjs/jwt';
 

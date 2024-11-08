@@ -4,7 +4,7 @@ import { Database } from '../kysesly/database';
 import { CreateTestDto } from './dto/create-test.dto';
 import { Request } from 'express';
 import { tests } from '../kysesly/kysesly-types/kysesly';
-import { CustomException } from '../exceptions/custom.exception';
+import { CustomException } from '../../exceptions/custom.exception';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { customAlphabet } = require('fix-esm').require('nanoid');
 

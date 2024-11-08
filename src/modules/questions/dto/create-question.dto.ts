@@ -11,7 +11,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { QuestionType } from '../../kysesly/kysesly-types/enums';
-import { CustomIsInArray } from '../../validators/custom-validator';
+import { CustomIsInArray } from '../../../validators/custom-validator';
 
 export class CreateQuestionDto {
   @IsUUID()

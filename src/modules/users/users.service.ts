@@ -20,21 +20,7 @@ export class UsersService {
       .leftJoin('institutions', 'users.institutionId', 'institutions.id')
       .leftJoin('media', 'media.userId', 'users.id')
       .leftJoin('tests', 'tests.userId', 'users.id')
-      .select([
-        'users.id',
-        'users.firstName',
-        'users.lastName',
-        'users.email',
-        'users.photoId',
-        'users.banned',
-        'users.isEmailVerified',
-        'users.authType',
-        'tests.id as testId',
-        'institutions.id as institutionId',
-        'institutions.name as institutionName',
-        'media.id as mediaId',
-        'media.url as mediaUrl',
-      ])
+      .select(['users.id', 'users.firstName', 'users.lastName', 'users.email', 'users.photoId', 'users.banned', 'users.isEmailVerified', 'users.authType', 'tests.id as testId', 'institutions.id as institutionId', 'institutions.name as institutionName', 'media.id as mediaId', 'media.url as mediaUrl'])
       .where(userId ? 'users.id' : 'users.email', '=', userId ?? email)
       .executeTakeFirst();
 
@@ -42,7 +28,6 @@ export class UsersService {
       return null; // Handle if no user is found
     }
 
-    // Now format the data to fit your desired output structure
     return {
       id: user.id,
       firstName: user.firstName,
@@ -52,9 +37,7 @@ export class UsersService {
       banned: user.banned,
       isEmailVerified: user.isEmailVerified,
       authType: user.authType,
-      institution: user.institutionId
-        ? [{ id: user.institutionId, name: user.institutionName }]
-        : [],
+      institution: user.institutionId ? [{ id: user.institutionId, name: user.institutionName }] : [],
       uploads: user.mediaId ? [{ id: user.mediaId, url: user.mediaUrl }] : [],
     };
   }

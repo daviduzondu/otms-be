@@ -5,15 +5,15 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
- provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 generator kysesly {
- provider     = "prisma-kysely"
- output       = "../src/kysesly/kysesly-types/"
- fileName     = "kysesly.ts"
- enumFileName = "enums.ts"
- readOnlyIds  = true
+  provider     = "prisma-kysely"
+  output       = "../src/modules/kysesly/kysesly-types/"
+  fileName     = "kysesly.ts"
+  enumFileName = "enums.ts"
+  readOnlyIds  = true
 }
 
 // generator nestjsDto {
@@ -27,116 +27,132 @@ generator kysesly {
 // }
 
 datasource db {
- provider = "postgresql"
- url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum QuestionType {
- mcq
- trueOrFalse
- shortAnswer
- essay
+  mcq
+  trueOrFalse
+  shortAnswer
+  essay
 }
 
 enum MediaType {
- image
- video
- pdf
- audio
+  image
+  video
+  pdf
+  audio
 }
 
 enum AuthType {
- local
- google
+  local
+  google
 }
 
 enum TestStatus {
- active
- pending
- completed
- paused
+  active
+  pending
+  completed
+  paused
 }
 
 model users {
- id              String        @id @default(dbgenerated("gen_random_uuid()"))
- firstName       String
- lastName        String?
- /// @email
- email           String        @unique
- password        String?
- photoId         String? // If there's a specific profile photo (optional)
- photo           media?        @relation("UserProfilePhoto", fields: [photoId], references: [id])
- banned          Boolean?      @default(false)
- isEmailVerified Boolean?      @default(false)
- authType        AuthType?
- institutionId   String?
- institution     institutions? @relation(fields: [institutionId], references: [id])
- uploads         media[]       @relation("UserUploads") // One user can upload many media
- tests           tests[]
- createdAt       DateTime      @default(now())
- updatedAt       DateTime      @default(now()) @updatedAt
+  id              String            @id @default(dbgenerated("gen_random_uuid()"))
+  firstName       String
+  lastName        String?
+  /// @email
+  email           String            @unique
+  password        String?
+  photoId         String? // If there's a specific profile photo (optional)
+  photo           media?            @relation("UserProfilePhoto", fields: [photoId], references: [id])
+  banned          Boolean?          @default(false)
+  isEmailVerified Boolean?          @default(false)
+  authType        AuthType?
+  institutionId   String?
+  institution     institutions?     @relation(fields: [institutionId], references: [id])
+  uploads         media[]           @relation("UserUploads") // One user can upload many media
+  tests           tests[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @default(now()) @updatedAt
+  classes         student_classes[]
 }
 
 model institutions {
- id        String   @id @default(dbgenerated("gen_random_uuid()"))
- name      String
- logo      String
- users     users[]
- tests     tests[]
- createdAt DateTime @default(now())
- updatedAt DateTime @default(now()) @updatedAt
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  name      String
+  logo      String
+  users     users[]
+  tests     tests[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model media {
- id        String      @id @default(dbgenerated("gen_random_uuid()"))
- type      MediaType
- url       String
- userId    String
- user      users       @relation("UserUploads", fields: [userId], references: [id])
- users     users[]     @relation("UserProfilePhoto")
- questions questions[] // One media can be used in multiple questions
- createdAt DateTime    @default(now())
- updatedAt DateTime    @default(now()) @updatedAt
+  id        String      @id @default(dbgenerated("gen_random_uuid()"))
+  type      MediaType
+  url       String
+  userId    String
+  user      users       @relation("UserUploads", fields: [userId], references: [id])
+  users     users[]     @relation("UserProfilePhoto")
+  questions questions[] // One media can be used in multiple questions
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now()) @updatedAt
 }
 
 model tests {
- id                  String        @id @default(dbgenerated("gen_random_uuid()"))
- userId              String
- user                users         @relation(fields: [userId], references: [id])
- title               String
- instructions        String?
- printCount          Int?
- passingScore        Int?          @default(70)
- requireFullScreen   Boolean?      @default(false)
- showCorrectAnswers  Boolean?      @default(false)
- disableCopyPaste    Boolean?      @default(false)
- provideExplanations Boolean?      @default(false)
- randomizeQuestions  Boolean?      @default(false)
- startsAt            DateTime?
- endsAt              DateTime?
- isRevoked           Boolean       @default(false)
- isDeleted           Boolean       @default(false)
- institution         institutions? @relation(fields: [institutionId], references: [id])
- institutionId       String?
- code                String?       @unique
- createdAt           DateTime      @default(now())
- updatedAt           DateTime      @default(now()) @updatedAt
- questions           questions[] // A test can have many questions
+  id                  String        @id @default(dbgenerated("gen_random_uuid()"))
+  userId              String
+  user                users         @relation(fields: [userId], references: [id])
+  title               String
+  instructions        String?
+  printCount          Int?
+  passingScore        Int?          @default(70)
+  requireFullScreen   Boolean?      @default(false)
+  showCorrectAnswers  Boolean?      @default(false)
+  disableCopyPaste    Boolean?      @default(false)
+  provideExplanations Boolean?      @default(false)
+  randomizeQuestions  Boolean?      @default(false)
+  startsAt            DateTime?
+  endsAt              DateTime?
+  isRevoked           Boolean       @default(false)
+  isDeleted           Boolean       @default(false)
+  institution         institutions? @relation(fields: [institutionId], references: [id])
+  institutionId       String?
+  code                String?       @unique
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @default(now()) @updatedAt
+  questions           questions[] // A test can have many questions
+}
+
+model student_classes {
+  id        String @id @default(dbgenerated("gen_random_uuid()"))
+  name      String
+  teacherId String
+  teacher   users  @relation(fields: [teacherId], references: [id])
+
+  studentsId String
+  student students @relation(fields: [studentsId], references: [id])
+}
+
+model students {
+  id      String            @id @default(dbgenerated("gen_random_uuid()"))
+  classes student_classes[]
 }
 
 model questions {
- id            String       @id @default(dbgenerated("gen_random_uuid()"))
- testId        String
- test          tests        @relation(fields: [testId], references: [id])
- type          QuestionType
- options       String[]
- index         Int          @default(0)
- points        Int          @default(10)
- correctAnswer String?
- body          String
- mediaId       String?
- isDeleted     Boolean      @default(false)
- media         media?       @relation(fields: [mediaId], references: [id])
- createdAt     DateTime     @default(now())
- updatedAt     DateTime     @default(now()) @updatedAt
+  id            String       @id @default(dbgenerated("gen_random_uuid()"))
+  testId        String
+  test          tests        @relation(fields: [testId], references: [id])
+  type          QuestionType
+  options       String[]
+  index         Int          @default(0)
+  points        Int          @default(10)
+  correctAnswer String?
+  body          String
+  mediaId       String?
+  isDeleted     Boolean      @default(false)
+  media         media?       @relation(fields: [mediaId], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @default(now()) @updatedAt
 }

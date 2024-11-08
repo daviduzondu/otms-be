@@ -35,6 +35,15 @@ export type questions = {
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
+export type student_classes = {
+    id: GeneratedAlways<string>;
+    name: string;
+    teacherId: string;
+    studentsId: string;
+};
+export type students = {
+    id: GeneratedAlways<string>;
+};
 export type tests = {
     id: GeneratedAlways<string>;
     userId: string;
@@ -77,6 +86,8 @@ export type DB = {
     institutions: institutions;
     media: media;
     questions: questions;
+    student_classes: student_classes;
+    students: students;
     tests: tests;
     users: users;
 };

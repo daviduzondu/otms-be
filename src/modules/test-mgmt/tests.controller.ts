@@ -12,12 +12,12 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CreateTestDto } from './dto/create-test.dto';
 import { Request } from 'express';
 import { TestService } from './tests.service';
-import CheckOwnership from '../decorators/check-ownership.decorator';
-import { OwnerGuard } from '../guards/owner.guard';
+import CheckOwnership from '../../decorators/check-ownership.decorator';
+import { OwnerGuard } from '../../guards/owner.guard';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('tests')

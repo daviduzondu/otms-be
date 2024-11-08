@@ -11,9 +11,9 @@ import {
 } from '@nestjs/common';
 import { QuestionsService } from './questions.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import CheckOwnership from '../decorators/check-ownership.decorator';
-import { OwnerGuard } from '../guards/owner.guard';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import CheckOwnership from '../../decorators/check-ownership.decorator';
+import { OwnerGuard } from '../../guards/owner.guard';
 import { UpdateQuestionOrderDto } from './dto/update-question-index.dto';
 
 @Controller('questions')

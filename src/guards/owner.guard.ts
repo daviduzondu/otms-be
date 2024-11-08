@@ -5,8 +5,8 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { InjectKysesly } from '../kysesly/decorators/inject-repository';
-import { Database } from '../kysesly/database';
+import { InjectKysesly } from '../modules/kysesly/decorators/inject-repository';
+import { Database } from '../modules/kysesly/database';
 import { ForeignKey, TableName } from '../decorators/check-ownership.decorator';
 import { CustomException } from '../exceptions/custom.exception';
 import { Request } from 'express';

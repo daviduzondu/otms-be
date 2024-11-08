@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { DB } from '../kysesly/kysesly-types/kysesly';
+import { DB } from '../modules/kysesly/kysesly-types/kysesly';
 import { Request } from 'express';
 
 export type TableName = keyof DB;

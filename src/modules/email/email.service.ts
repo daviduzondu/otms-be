@@ -1,12 +1,12 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BREVO_INSTANCE } from '../constants/tokens';
+import { BREVO_INSTANCE } from '../../constants/tokens';
 import { SendSmtpEmail, TransactionalEmailsApi } from '@getbrevo/brevo';
 import * as mjml from 'mjml';
 import * as handlebars from 'handlebars';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { CustomException } from '../exceptions/custom.exception';
+import { CustomException } from '../../exceptions/custom.exception';
 
 @Injectable()
 export class EmailService {

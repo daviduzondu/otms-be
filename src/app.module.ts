@@ -2,17 +2,17 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthModule } from './auth/auth.module';
+import { AuthModule } from './modules/auth/auth.module';
 import * as Joi from 'joi';
-import { AuthService } from './auth/auth.service';
-import { UsersModule } from './users/users.module';
+import { AuthService } from './modules/auth/auth.service';
+import { UsersModule } from './modules/users/users.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { KyseslyModule } from './kysesly/kysesly.module';
-import { TestsModule } from './test-mgmt/tests.module';
-import { QuestionsModule } from './questions/questions.module';
-import { EmailModule } from './email/email.module';
-import { EmailService } from './email/email.service';
+import { KyseslyModule } from './modules/kysesly/kysesly.module';
+import { TestsModule } from './modules/test-mgmt/tests.module';
+import { QuestionsModule } from './modules/questions/questions.module';
+import { EmailModule } from './modules/email/email.module';
+import { EmailService } from './modules/email/email.service';
 
 @Module({
   imports: [
