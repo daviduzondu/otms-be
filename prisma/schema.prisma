@@ -57,7 +57,7 @@ enum TestStatus {
   paused
 }
 
-model users {
+model teachers {
   id              String            @id @default(dbgenerated("gen_random_uuid()"))
   firstName       String
   lastName        String?
@@ -65,13 +65,13 @@ model users {
   email           String            @unique
   password        String?
   photoId         String? // If there's a specific profile photo (optional)
-  photo           media?            @relation("UserProfilePhoto", fields: [photoId], references: [id])
+  photo           media?            @relation("profile_photo", fields: [photoId], references: [id])
   banned          Boolean?          @default(false)
   isEmailVerified Boolean?          @default(false)
   authType        AuthType?
   institutionId   String?
   institution     institutions?     @relation(fields: [institutionId], references: [id])
-  uploads         media[]           @relation("UserUploads") // One user can upload many media
+  uploads         media[]           @relation("uploads") // One teacher can upload many media
   tests           tests[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @default(now()) @updatedAt
@@ -79,22 +79,22 @@ model users {
 }
 
 model institutions {
-  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  id        String     @id @default(dbgenerated("gen_random_uuid()"))
   name      String
   logo      String
-  users     users[]
+  teachers  teachers[]
   tests     tests[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
 }
 
 model media {
   id        String      @id @default(dbgenerated("gen_random_uuid()"))
   type      MediaType
   url       String
-  userId    String
-  user      users       @relation("UserUploads", fields: [userId], references: [id])
-  users     users[]     @relation("UserProfilePhoto")
+  teacherId String
+  teacher   teachers    @relation("uploads", fields: [teacherId], references: [id])
+  teachers  teachers[]  @relation("profile_photo")
   questions questions[] // One media can be used in multiple questions
   createdAt DateTime    @default(now())
   updatedAt DateTime    @default(now()) @updatedAt
@@ -102,8 +102,8 @@ model media {
 
 model tests {
   id                  String        @id @default(dbgenerated("gen_random_uuid()"))
-  userId              String
-  user                users         @relation(fields: [userId], references: [id])
+  teacherId           String
+  teacher             teachers      @relation(fields: [teacherId], references: [id])
   title               String
   instructions        String?
   printCount          Int?
@@ -126,13 +126,13 @@ model tests {
 }
 
 model student_classes {
-  id        String @id @default(dbgenerated("gen_random_uuid()"))
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
   name      String
   teacherId String
-  teacher   users  @relation(fields: [teacherId], references: [id])
+  teacher   teachers @relation(fields: [teacherId], references: [id])
 
   studentsId String
-  student students @relation(fields: [studentsId], references: [id])
+  student    students @relation(fields: [studentsId], references: [id])
 }
 
 model students {

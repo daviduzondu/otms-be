@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Post,
-  Put,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Param, ParseUUIDPipe, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import { QuestionsService } from './questions.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
@@ -25,7 +15,7 @@ export class QuestionsController {
   @CheckOwnership({
     table: 'tests',
     column: 'id',
-    foreignKey: 'userId',
+    foreignKey: 'teacherId',
     pathOnReq: ['body', 'testId'],
   })
   async createQuestion(@Body() CreateQuestionDto: CreateQuestionDto) {
@@ -37,24 +27,18 @@ export class QuestionsController {
   @CheckOwnership({
     table: 'tests',
     column: 'id',
-    foreignKey: 'userId',
+    foreignKey: 'teacherId',
     pathOnReq: ['body', 'testId'],
   })
-  async editQuestion(
-    @Body() editQuestionDto: CreateQuestionDto,
-    @Param('questionId', ParseUUIDPipe) questionId: string,
-  ) {
-    return await this.questionsService.editQuestion(
-      editQuestionDto,
-      questionId,
-    );
+  async editQuestion(@Body() editQuestionDto: CreateQuestionDto, @Param('questionId', ParseUUIDPipe) questionId: string) {
+    return await this.questionsService.editQuestion(editQuestionDto, questionId);
   }
 
   @Delete('/delete/:questionId')
   @CheckOwnership({
     table: 'tests',
     column: 'id',
-    foreignKey: 'userId',
+    foreignKey: 'teacherId',
     pathOnReq: ['body', 'testId'],
   })
   async deleteQuestion(@Param('questionId', ParseUUIDPipe) questionId: string) {
@@ -65,12 +49,10 @@ export class QuestionsController {
   @CheckOwnership({
     table: 'tests',
     column: 'id',
-    foreignKey: 'userId',
+    foreignKey: 'teacherId',
     pathOnReq: ['body', 'testId'],
   })
   async updateIndex(@Body() updateQuestionIndexDto: UpdateQuestionOrderDto) {
-    return await this.questionsService.updateQuestionOrder(
-      updateQuestionIndexDto,
-    );
+    return await this.questionsService.updateQuestionOrder(updateQuestionIndexDto);
   }
 }

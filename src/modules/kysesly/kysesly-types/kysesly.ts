@@ -17,7 +17,7 @@ export type media = {
     id: GeneratedAlways<string>;
     type: MediaType;
     url: string;
-    userId: string;
+    teacherId: string;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
@@ -44,9 +44,26 @@ export type student_classes = {
 export type students = {
     id: GeneratedAlways<string>;
 };
+export type teachers = {
+    id: GeneratedAlways<string>;
+    firstName: string;
+    lastName: string | null;
+    /**
+     * @email
+     */
+    email: string;
+    password: string | null;
+    photoId: string | null;
+    banned: Generated<boolean | null>;
+    isEmailVerified: Generated<boolean | null>;
+    authType: AuthType | null;
+    institutionId: string | null;
+    createdAt: Generated<Timestamp>;
+    updatedAt: Generated<Timestamp>;
+};
 export type tests = {
     id: GeneratedAlways<string>;
-    userId: string;
+    teacherId: string;
     title: string;
     instructions: string | null;
     printCount: number | null;
@@ -65,29 +82,12 @@ export type tests = {
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
-export type users = {
-    id: GeneratedAlways<string>;
-    firstName: string;
-    lastName: string | null;
-    /**
-     * @email
-     */
-    email: string;
-    password: string | null;
-    photoId: string | null;
-    banned: Generated<boolean | null>;
-    isEmailVerified: Generated<boolean | null>;
-    authType: AuthType | null;
-    institutionId: string | null;
-    createdAt: Generated<Timestamp>;
-    updatedAt: Generated<Timestamp>;
-};
 export type DB = {
     institutions: institutions;
     media: media;
     questions: questions;
     student_classes: student_classes;
     students: students;
+    teachers: teachers;
     tests: tests;
-    users: users;
 };

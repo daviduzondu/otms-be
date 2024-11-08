@@ -1,17 +1,4 @@
-import {
-  Body,
-  ClassSerializerInterceptor,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  Put,
-  Req,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CreateTestDto } from './dto/create-test.dto';
 import { Request } from 'express';
@@ -23,6 +10,7 @@ import { OwnerGuard } from '../../guards/owner.guard';
 @Controller('tests')
 export class TestsController {
   constructor(private readonly testService: TestService) {}
+
   @Get()
   @UseGuards(JwtAuthGuard)
   async getTests(@Req() req: Request) {
@@ -33,7 +21,7 @@ export class TestsController {
   @CheckOwnership({
     table: 'tests',
     column: 'id',
-    foreignKey: 'userId',
+    foreignKey: 'teacherId',
     pathOnReq: ['params', 'id'],
   })
   @UseGuards(JwtAuthGuard, OwnerGuard)

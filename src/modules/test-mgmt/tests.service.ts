@@ -21,21 +21,17 @@ export class TestService {
   //     .selectFrom('tests')
   //     .selectAll()
   //     .where('id', '=', testId)
-  //     .where('tests.userId', '=', (req as any).user.id)
+  //     .where('tests.teacherId', '=', (req as any).teacher.id)
   //     .executeTakeFirstOrThrow();
   // }
 
   async createNewTest(payload: CreateTestDto, req: Request) {
     Object.assign(payload, {
       code: await this.generateTestCode(),
-      userId: (req as any).user.id,
+      teacherId: (req as any).teacher.id,
     } as tests);
 
-    const test = await this.db
-      .insertInto('tests')
-      .values(payload)
-      .returningAll()
-      .executeTakeFirst();
+    const test = await this.db.insertInto('tests').values(payload).returningAll().executeTakeFirst();
 
     return {
       message: 'Test Creation Sucessful',
@@ -48,7 +44,7 @@ export class TestService {
     const tests = await this.db
       .selectFrom('tests')
       .selectAll('tests')
-      .where('userId', '=', (req.user as any).id)
+      .where('teacherId', '=', (req.user as any).id)
       .execute();
 
     return {
@@ -62,7 +58,7 @@ export class TestService {
       .selectFrom('tests')
       .selectAll('tests') // Select all fields from 'tests'
       .where('tests.id', '=', id)
-      .where('tests.userId', '=', (req as any).user.id)
+      .where('tests.teacherId', '=', (req as any).teacher.id)
       .executeTakeFirstOrThrow(() => {
         return new CustomException('Test not found', HttpStatus.NOT_FOUND);
       });

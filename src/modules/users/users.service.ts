@@ -6,39 +6,39 @@ import { InjectKysesly } from '../kysesly/decorators/inject-repository';
 export class UsersService {
   constructor(@InjectKysesly() private db: Database) {}
 
-  async getUserRecord({ userId, email }: { userId?: string; email?: string }) {
+  async getTeacherRecord({ teacherId, email }: { teacherId?: string; email?: string }) {
     return await this.db
-      .selectFrom('users')
+      .selectFrom('teachers')
       .selectAll()
-      .where(userId ? 'id' : 'email', '=', userId ?? email)
+      .where(teacherId ? 'id' : 'email', '=', teacherId ?? email)
       .executeTakeFirst();
   }
 
-  async getUserProfile({ userId, email }: { userId?: string; email?: string }) {
-    const user = await this.db
-      .selectFrom('users')
-      .leftJoin('institutions', 'users.institutionId', 'institutions.id')
-      .leftJoin('media', 'media.userId', 'users.id')
-      .leftJoin('tests', 'tests.userId', 'users.id')
-      .select(['users.id', 'users.firstName', 'users.lastName', 'users.email', 'users.photoId', 'users.banned', 'users.isEmailVerified', 'users.authType', 'tests.id as testId', 'institutions.id as institutionId', 'institutions.name as institutionName', 'media.id as mediaId', 'media.url as mediaUrl'])
-      .where(userId ? 'users.id' : 'users.email', '=', userId ?? email)
+  async getTeacherProfile({ teacherId, email }: { teacherId?: string; email?: string }) {
+    const teacher = await this.db
+      .selectFrom('teachers')
+      .leftJoin('institutions', 'teachers.institutionId', 'institutions.id')
+      .leftJoin('media', 'media.teacherId', 'teachers.id')
+      .leftJoin('tests', 'tests.teacherId', 'teachers.id')
+      .select(['teachers.id', 'teachers.firstName', 'teachers.lastName', 'teachers.email', 'teachers.photoId', 'teachers.banned', 'teachers.isEmailVerified', 'teachers.authType', 'tests.id as testId', 'institutions.id as institutionId', 'institutions.name as institutionName', 'media.id as mediaId', 'media.url as mediaUrl'])
+      .where(teacherId ? 'teachers.id' : 'teachers.email', '=', teacherId ?? email)
       .executeTakeFirst();
 
-    if (!user) {
-      return null; // Handle if no user is found
+    if (!teacher) {
+      return null; // Handle if no teacher is found
     }
 
     return {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      photoId: user.photoId,
-      banned: user.banned,
-      isEmailVerified: user.isEmailVerified,
-      authType: user.authType,
-      institution: user.institutionId ? [{ id: user.institutionId, name: user.institutionName }] : [],
-      uploads: user.mediaId ? [{ id: user.mediaId, url: user.mediaUrl }] : [],
+      id: teacher.id,
+      firstName: teacher.firstName,
+      lastName: teacher.lastName,
+      email: teacher.email,
+      photoId: teacher.photoId,
+      banned: teacher.banned,
+      isEmailVerified: teacher.isEmailVerified,
+      authType: teacher.authType,
+      institution: teacher.institutionId ? [{ id: teacher.institutionId, name: teacher.institutionName }] : [],
+      uploads: teacher.mediaId ? [{ id: teacher.mediaId, url: teacher.mediaUrl }] : [],
     };
   }
 }

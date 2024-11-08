@@ -12,7 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 export class AuthService {
   constructor(
     @InjectKysesly() private db: Database,
-    private userService: UsersService,
+    private teacherService: UsersService,
     private jwtService: JwtService,
   ) {}
 
@@ -20,18 +20,15 @@ export class AuthService {
     return await bcrypt.hash(password, await bcrypt.genSalt());
   }
 
-  async registerUserWithEmailAndPassword(
-    CreateLocalUserDto: CreateLocalUserDto,
-  ) {
-    const exists = await this.userService.getUserRecord({
+  async registerUserWithEmailAndPassword(CreateLocalUserDto: CreateLocalUserDto) {
+    const exists = await this.teacherService.getTeacherRecord({
       email: CreateLocalUserDto.email,
     });
 
-    if (exists)
-      throw new CustomException('User already exists', HttpStatus.CONFLICT);
+    if (exists) throw new CustomException('User already exists', HttpStatus.CONFLICT);
 
-    const user = await this.db
-      .insertInto('users')
+    const teacher = await this.db
+      .insertInto('teachers')
       .values(
         Object.assign(CreateLocalUserDto, {
           password: await this.hashPassword(CreateLocalUserDto.password),
@@ -41,30 +38,25 @@ export class AuthService {
       .executeTakeFirst();
     return {
       message: 'Registration Successful',
-      data: { email: user.email },
+      data: { email: teacher.email },
     };
   }
 
   async login(LocalUserLoginDto: LocalUserLoginDto) {
-    const user = await this.userService.getUserRecord({
+    const teacher = await this.teacherService.getTeacherRecord({
       email: LocalUserLoginDto.email,
     });
-    if (
-      !user ||
-      !bcrypt.compareSync(LocalUserLoginDto.password, user.password)
-    ) {
+    if (!teacher || !bcrypt.compareSync(LocalUserLoginDto.password, teacher.password)) {
       throw new CustomException('Invalid credentials', HttpStatus.UNAUTHORIZED);
     }
     return {
       message: 'Login Successful',
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      photoUrl: user.photoId,
-      accessToken: this.jwtService.sign(
-        Object.assign(user, { passport: undefined }),
-      ),
+      id: teacher.id,
+      email: teacher.email,
+      firstName: teacher.firstName,
+      lastName: teacher.lastName,
+      photoUrl: teacher.photoId,
+      accessToken: this.jwtService.sign(Object.assign(teacher, { passport: undefined })),
     };
   }
 }
