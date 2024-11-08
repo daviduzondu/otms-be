@@ -9,7 +9,6 @@ import { UpdateQuestionOrderDto } from './dto/update-question-index.dto';
 export class QuestionsService {
   constructor(
     @InjectKysesly() private db: Database,
-    private testService: TestService,
   ) {}
 
   async createQuestion(payload: CreateQuestionDto) {

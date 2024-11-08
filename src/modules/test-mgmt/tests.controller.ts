@@ -5,6 +5,7 @@ import { Request } from 'express';
 import { TestService } from './tests.service';
 import CheckOwnership from '../../decorators/check-ownership.decorator';
 import { OwnerGuard } from '../../guards/owner.guard';
+import { SendTestInvitationMailDto } from './dto/send-test.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('tests')
@@ -42,6 +43,12 @@ export class TestsController {
   @Post('create')
   async createTest(@Body() createTestDto: CreateTestDto, @Req() req: Request) {
     return await this.testService.createNewTest(createTestDto, req);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('send-test')
+  async sendTestInvitation(@Body() payload: SendTestInvitationMailDto, @Req() req: Request) {
+    return await this.testService.sendTestInvitationMail(req, payload);
   }
 
   async getPrintsVersion() {}

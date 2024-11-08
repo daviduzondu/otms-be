@@ -2,10 +2,10 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BREVO_INSTANCE } from '../../constants/tokens';
 import { SendSmtpEmail, TransactionalEmailsApi } from '@getbrevo/brevo';
-import * as mjml from 'mjml';
-import * as handlebars from 'handlebars';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import mjml from 'mjml';
+import handlebars from 'handlebars';
+import fs from 'node:fs';
+import path from 'node:path';
 import { CustomException } from '../../exceptions/custom.exception';
 
 @Injectable()
@@ -36,17 +36,23 @@ export class EmailService {
     return html;
   }
 
-  async sendEmail(payload: { to: Array<{ email: string; name: string }>; context: Record<string, any>; subject: string; templateName: string }) {
-    const template = fs.readFileSync(path.join(process.cwd(), 'src', 'email', `/templates/${payload.templateName}.mjml`), { encoding: 'utf8' });
-
-    const html = this.compileTemplate(template, payload.context);
+  async sendEmail(payload: { to: Array<{ email: string; name: string }>; context: any; subject: string; templateName: string }) {
+    const template = fs.readFileSync(path.join(process.cwd(), 'src', 'modules', 'email', `/templates/${payload.templateName}.mjml`), { encoding: 'utf8' });
 
     const sendSmtpEmail = new SendSmtpEmail();
 
-    sendSmtpEmail.to = payload.to;
-    sendSmtpEmail.htmlContent = html;
     sendSmtpEmail.subject = payload.subject;
     sendSmtpEmail.sender = this.sender;
+    sendSmtpEmail.htmlContent = '<div></div>';
+    sendSmtpEmail.messageVersions = payload.to.map((x) => ({
+      to: [
+        {
+          email: x.email,
+          name: payload.context.filter(({ email }) => email === x.email)[0].studentName,
+        },
+      ],
+      htmlContent: this.compileTemplate(template, payload.context.filter(({ email }) => email === x.email)[0]),
+    }));
 
     await this.brevoInstance.sendTransacEmail(sendSmtpEmail).catch((err) => {
       console.log(err);

@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import * as brevo from '@getbrevo/brevo';
 import { ConfigService } from '@nestjs/config';
 import { BREVO_INSTANCE } from '../../constants/tokens';
 
+@Global()
 @Module({
   providers: [
     {

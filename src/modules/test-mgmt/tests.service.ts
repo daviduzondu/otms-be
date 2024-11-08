@@ -5,12 +5,17 @@ import { CreateTestDto } from './dto/create-test.dto';
 import { Request } from 'express';
 import { tests } from '../kysesly/kysesly-types/kysesly';
 import { CustomException } from '../../exceptions/custom.exception';
+import { EmailService } from '../email/email.service';
+import { SendTestInvitationMailDto } from './dto/send-test.dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { customAlphabet } = require('fix-esm').require('nanoid');
 
 @Injectable()
 export class TestService {
-  constructor(@InjectKysesly() private db: Database) {}
+  constructor(
+    @InjectKysesly() private db: Database,
+    private readonly emailService: EmailService,
+  ) {}
 
   private async generateTestCode() {
     return customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 21)(7);
@@ -80,5 +85,39 @@ export class TestService {
         questions, // Include the array of questions in the response
       },
     };
+  }
+
+  async sendTestInvitationMail(req, { students, testId }: SendTestInvitationMailDto) {
+    // Get the test
+    const test = await this.db
+      .selectFrom('tests')
+      .selectAll()
+      .where('tests.id', '=', testId)
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException('Test not found!', HttpStatus.NOT_FOUND);
+      });
+
+    // Get the students
+    const results = await this.db.selectFrom('students').selectAll().where('id', 'in', students).execute();
+
+    // Get the teacher
+    const teacher = await this.db
+      .selectFrom('teachers')
+      .selectAll()
+      .where('id', '=', (req as any).user.id)
+      .executeTakeFirst();
+
+    await this.emailService.sendEmail({
+      to: results.map((x) => ({ email: x.email, name: `${x.firstName} ${x.lastName}` })),
+      subject: 'You have been invited to take a test!',
+      templateName: 'test-invitation',
+      context: results.map((x) => ({
+        studentName: `${x.firstName} ${x.lastName}`,
+        teacherName: `${teacher.firstName} ${teacher.lastName}`,
+        testName: test.title,
+        testUrl: 'https://example.com/test-link',
+        email: x.email,
+      })),
+    });
   }
 }
