@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,31 +5,132 @@ generator client {
 generator kysesly {
   provider     = "prisma-kysely"
   output       = "../src/modules/kysesly/kysesly-types/"
-  fileName     = "kysesly.ts"
+  readOnlyIds  = "true"
   enumFileName = "enums.ts"
-  readOnlyIds  = true
+  fileName     = "kysesly.ts"
 }
-
-// generator nestjsDto {
-//  provider                      = "prisma-generator-nestjs-dto"
-//  output                        = "../src/generated/dto/"
-//  generateFileTypes             = "dto"
-//  fileNamingStyle               = "camel"
-//  classValidation               = "true"
-//  prettier                      = "true"
-//  exportRelationModifierClasses = "false"
-// }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-enum QuestionType {
-  mcq
-  trueOrFalse
-  shortAnswer
-  essay
+model classes {
+  id            String          @id @default(dbgenerated("gen_random_uuid()"))
+  name          String
+  teacherId     String
+  teachers      teachers        @relation(fields: [teacherId], references: [id])
+  student_class student_class[]
+  students      students[]      @relation("StudentClasses")
+}
+
+model institutions {
+  id        String     @id @default(dbgenerated("gen_random_uuid()"))
+  name      String
+  logo      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now())
+  teachers  teachers[]
+  tests     tests[]
+}
+
+model media {
+  id                                 String      @id @default(dbgenerated("gen_random_uuid()"))
+  type                               MediaType
+  url                                String
+  createdAt                          DateTime    @default(now())
+  updatedAt                          DateTime    @default(now())
+  teacherId                          String
+  teachers_media_teacherIdToteachers teachers    @relation("media_teacherIdToteachers", fields: [teacherId], references: [id])
+  questions                          questions[]
+  teachers_teachers_photoIdTomedia   teachers[]  @relation("teachers_photoIdTomedia")
+}
+
+model questions {
+  id            String       @id @default(dbgenerated("gen_random_uuid()"))
+  testId        String
+  type          QuestionType
+  options       String[]
+  correctAnswer String?
+  body          String
+  mediaId       String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @default(now())
+  points        Int          @default(10)
+  isDeleted     Boolean      @default(false)
+  index         Int          @default(0)
+  media         media?       @relation(fields: [mediaId], references: [id])
+  tests         tests        @relation(fields: [testId], references: [id])
+}
+
+model student_class {
+  id          String   @id @default(dbgenerated("gen_random_uuid()"))
+  studentId   String
+  classId     String
+  removeAfter DateTime
+  classes     classes  @relation(fields: [classId], references: [id])
+  students    students @relation(fields: [studentId], references: [id])
+}
+
+model students {
+  id            String          @id @default(dbgenerated("gen_random_uuid()"))
+  email         String
+  regNumber     String
+  firstName     String
+  lastName      String
+  middleName    String?
+  student_class student_class[]
+  classes       classes[]       @relation("StudentClasses")
+}
+
+model teachers {
+  id                              String        @id @default(dbgenerated("gen_random_uuid()"))
+  firstName                       String
+  lastName                        String?
+  email                           String        @unique
+  password                        String?
+  photoId                         String?
+  banned                          Boolean?      @default(false)
+  isEmailVerified                 Boolean?      @default(false)
+  authType                        AuthType?
+  institutionId                   String?
+  createdAt                       DateTime      @default(now())
+  updatedAt                       DateTime      @default(now())
+  classes                         classes[]
+  media_media_teacherIdToteachers media[]       @relation("media_teacherIdToteachers")
+  institutions                    institutions? @relation(fields: [institutionId], references: [id])
+  media_teachers_photoIdTomedia   media?        @relation("teachers_photoIdTomedia", fields: [photoId], references: [id])
+  tests                           tests[]
+}
+
+model tests {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()"))
+  endsAt              DateTime?
+  institutionId       String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @default(now())
+  code                String?       @unique
+  printCount          Int?
+  instructions        String?
+  title               String
+  isDeleted           Boolean       @default(false)
+  isRevoked           Boolean       @default(false)
+  startsAt            DateTime?
+  disableCopyPaste    Boolean?      @default(false)
+  passingScore        Int?          @default(70)
+  provideExplanations Boolean?      @default(false)
+  randomizeQuestions  Boolean?      @default(false)
+  requireFullScreen   Boolean?      @default(false)
+  showCorrectAnswers  Boolean?      @default(false)
+  teacherId           String
+  questions           questions[]
+  institutions        institutions? @relation(fields: [institutionId], references: [id])
+  teachers            teachers      @relation(fields: [teacherId], references: [id])
+}
+
+enum AuthType {
+  local
+  google
 }
 
 enum MediaType {
@@ -45,9 +140,11 @@ enum MediaType {
   audio
 }
 
-enum AuthType {
-  local
-  google
+enum QuestionType {
+  mcq
+  trueOrFalse
+  shortAnswer
+  essay
 }
 
 enum TestStatus {
@@ -55,120 +152,4 @@ enum TestStatus {
   pending
   completed
   paused
-}
-
-model teachers {
-  id              String        @id @default(dbgenerated("gen_random_uuid()"))
-  firstName       String
-  lastName        String?
-  /// @email
-  email           String        @unique
-  password        String?
-  photoId         String? // If there's a specific profile photo (optional)
-  photo           media?        @relation("profile_photo", fields: [photoId], references: [id])
-  banned          Boolean?      @default(false)
-  isEmailVerified Boolean?      @default(false)
-  authType        AuthType?
-  institutionId   String?
-  institution     institutions? @relation(fields: [institutionId], references: [id])
-  uploads         media[]       @relation("uploads") // One teacher can upload many media
-  tests           tests[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @default(now()) @updatedAt
-  classes         classes[]
-}
-
-model institutions {
-  id        String     @id @default(dbgenerated("gen_random_uuid()"))
-  name      String
-  logo      String
-  teachers  teachers[]
-  tests     tests[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now()) @updatedAt
-}
-
-model media {
-  id        String      @id @default(dbgenerated("gen_random_uuid()"))
-  type      MediaType
-  url       String
-  teacherId String
-  teacher   teachers    @relation("uploads", fields: [teacherId], references: [id])
-  teachers  teachers[]  @relation("profile_photo")
-  questions questions[] // One media can be used in multiple questions
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @default(now()) @updatedAt
-}
-
-model tests {
-  id                  String        @id @default(dbgenerated("gen_random_uuid()"))
-  teacherId           String
-  teacher             teachers      @relation(fields: [teacherId], references: [id])
-  title               String
-  instructions        String?
-  printCount          Int?
-  passingScore        Int?          @default(70)
-  requireFullScreen   Boolean?      @default(false)
-  showCorrectAnswers  Boolean?      @default(false)
-  disableCopyPaste    Boolean?      @default(false)
-  provideExplanations Boolean?      @default(false)
-  randomizeQuestions  Boolean?      @default(false)
-  startsAt            DateTime?
-  endsAt              DateTime?
-  isRevoked           Boolean       @default(false)
-  isDeleted           Boolean       @default(false)
-  institution         institutions? @relation(fields: [institutionId], references: [id])
-  institutionId       String?
-  code                String?       @unique
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @default(now()) @updatedAt
-  questions           questions[] // A test can have many questions
-}
-
-model classes {
-  id        String   @id @default(dbgenerated("gen_random_uuid()"))
-  name      String
-  teacherId String
-  teacher   teachers @relation(fields: [teacherId], references: [id])
-
-  student       students[]      @relation("StudentClasses")
-  student_class student_class[]
-}
-
-model students {
-  id            String          @id @default(dbgenerated("gen_random_uuid()"))
-  firstName     String
-  middleName    String?
-  lastName      String
-  email         String
-  regNumber     String
-  classes       classes[]       @relation("StudentClasses")
-  student_class student_class[]
-}
-
-model student_class {
-  id String @id @default(dbgenerated("gen_random_uuid()"))
-
-  studentId   String
-  classId     String
-  removeAfter DateTime
-  student     students @relation(fields: [studentId], references: [id])
-  class       classes  @relation(fields: [classId], references: [id])
-}
-
-model questions {
-  id            String       @id @default(dbgenerated("gen_random_uuid()"))
-  testId        String
-  test          tests        @relation(fields: [testId], references: [id])
-  type          QuestionType
-  options       String[]
-  index         Int          @default(0)
-  points        Int          @default(10)
-  correctAnswer String?
-  body          String
-  mediaId       String?
-  isDeleted     Boolean      @default(false)
-  media         media?       @relation(fields: [mediaId], references: [id])
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @default(now()) @updatedAt
 }

@@ -7,7 +7,9 @@
  "license": "UNLICENSED",
  "scripts": {
   "migrate:dev": "npx dotenv-cli -e .env.development -- npx prisma migrate dev",
-  "migrate:prod": "npx dotenv-cli -e .env.development -- npx prisma migrate deploy",
+  "migrate:prod": "npx dotenv-cli -e .env -- npx prisma migrate deploy",
+  "pull:dev": "npx dotenv-cli -e .env.development -- npx prisma db pull",
+  "migrate-baseline:dev": "npx dotenv-cli -e .env.development -- npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql",
   "build": "nest build",
   "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
   "start": "nest start",
