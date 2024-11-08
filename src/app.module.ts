@@ -13,6 +13,7 @@ import { TestsModule } from './modules/test-mgmt/tests.module';
 import { QuestionsModule } from './modules/questions/questions.module';
 import { EmailModule } from './modules/email/email.module';
 import { EmailService } from './modules/email/email.service';
+import { ClassesModule } from './modules/classes/classes.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { EmailService } from './modules/email/email.service';
     TestsModule,
     QuestionsModule,
     EmailModule,
+    ClassesModule,
   ],
   controllers: [AppController],
   providers: [AppService, AuthService, EmailService],

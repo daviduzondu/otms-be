@@ -58,7 +58,7 @@ export class TestService {
       .selectFrom('tests')
       .selectAll('tests') // Select all fields from 'tests'
       .where('tests.id', '=', id)
-      .where('tests.teacherId', '=', (req as any).teacher.id)
+      .where('tests.teacherId', '=', (req as any).user.id)
       .executeTakeFirstOrThrow(() => {
         return new CustomException('Test not found', HttpStatus.NOT_FOUND);
       });

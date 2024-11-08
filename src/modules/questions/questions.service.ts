@@ -36,7 +36,6 @@ export class QuestionsService {
       .returningAll()
       .executeTakeFirst();
 
-    console.log(question);
     return {
       message: 'Question added to test successfully',
       data: question,

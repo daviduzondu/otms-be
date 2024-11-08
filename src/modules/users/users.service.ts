@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { Database } from '../kysesly/database';
 import { InjectKysesly } from '../kysesly/decorators/inject-repository';
+import { CreateStudentDto } from './dto/student.dto';
+import { CustomException } from '../../exceptions/custom.exception';
 
 @Injectable()
 export class UsersService {
@@ -39,6 +41,21 @@ export class UsersService {
       authType: teacher.authType,
       institution: teacher.institutionId ? [{ id: teacher.institutionId, name: teacher.institutionName }] : [],
       uploads: teacher.mediaId ? [{ id: teacher.mediaId, url: teacher.mediaUrl }] : [],
+    };
+  }
+
+  async createStudent(CreateStudentDto: CreateStudentDto) {
+    const student = await this.db
+      .insertInto('students')
+      .values(CreateStudentDto)
+      .returningAll()
+      .executeTakeFirstOrThrow(() => {
+        return new CustomException('Failed to add student', HttpStatus.BAD_REQUEST);
+      });
+
+    return {
+      message: 'Student created successfully',
+      data: student,
     };
   }
 }

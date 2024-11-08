@@ -1,8 +1,4 @@
-import {
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
-  ValidationArguments,
-} from 'class-validator';
+import { ValidationArguments, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
 
 @ValidatorConstraint({ name: 'CustomIsInArray', async: false })
 export class CustomIsInArray implements ValidatorConstraintInterface {
@@ -12,7 +8,7 @@ export class CustomIsInArray implements ValidatorConstraintInterface {
     return Array.isArray(options) && options.includes(correctAnswer);
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage() {
     return 'Correct answer must be one of the options';
   }
 }

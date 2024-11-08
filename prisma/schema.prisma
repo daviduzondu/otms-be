@@ -58,24 +58,24 @@ enum TestStatus {
 }
 
 model teachers {
-  id              String            @id @default(dbgenerated("gen_random_uuid()"))
+  id              String        @id @default(dbgenerated("gen_random_uuid()"))
   firstName       String
   lastName        String?
   /// @email
-  email           String            @unique
+  email           String        @unique
   password        String?
   photoId         String? // If there's a specific profile photo (optional)
-  photo           media?            @relation("profile_photo", fields: [photoId], references: [id])
-  banned          Boolean?          @default(false)
-  isEmailVerified Boolean?          @default(false)
+  photo           media?        @relation("profile_photo", fields: [photoId], references: [id])
+  banned          Boolean?      @default(false)
+  isEmailVerified Boolean?      @default(false)
   authType        AuthType?
   institutionId   String?
-  institution     institutions?     @relation(fields: [institutionId], references: [id])
-  uploads         media[]           @relation("uploads") // One teacher can upload many media
+  institution     institutions? @relation(fields: [institutionId], references: [id])
+  uploads         media[]       @relation("uploads") // One teacher can upload many media
   tests           tests[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @default(now()) @updatedAt
-  classes         student_classes[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now()) @updatedAt
+  classes         classes[]
 }
 
 model institutions {
@@ -125,19 +125,35 @@ model tests {
   questions           questions[] // A test can have many questions
 }
 
-model student_classes {
+model classes {
   id        String   @id @default(dbgenerated("gen_random_uuid()"))
   name      String
   teacherId String
   teacher   teachers @relation(fields: [teacherId], references: [id])
 
-  studentsId String
-  student    students @relation(fields: [studentsId], references: [id])
+  student       students[]      @relation("StudentClasses")
+  student_class student_class[]
 }
 
 model students {
-  id      String            @id @default(dbgenerated("gen_random_uuid()"))
-  classes student_classes[]
+  id            String          @id @default(dbgenerated("gen_random_uuid()"))
+  firstName     String
+  middleName    String?
+  lastName      String
+  email         String
+  regNumber     String
+  classes       classes[]       @relation("StudentClasses")
+  student_class student_class[]
+}
+
+model student_class {
+  id String @id @default(dbgenerated("gen_random_uuid()"))
+
+  studentId   String
+  classId     String
+  removeAfter DateTime
+  student     students @relation(fields: [studentId], references: [id])
+  class       classes  @relation(fields: [classId], references: [id])
 }
 
 model questions {

@@ -6,6 +6,11 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 import type { QuestionType, MediaType, AuthType, TestStatus } from "./enums";
 
+export type classes = {
+    id: GeneratedAlways<string>;
+    name: string;
+    teacherId: string;
+};
 export type institutions = {
     id: GeneratedAlways<string>;
     name: string;
@@ -35,14 +40,23 @@ export type questions = {
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
-export type student_classes = {
+export type student_class = {
     id: GeneratedAlways<string>;
-    name: string;
-    teacherId: string;
-    studentsId: string;
+    studentId: string;
+    classId: string;
+    removeAfter: Timestamp;
+};
+export type StudentClasses = {
+    A: string;
+    B: string;
 };
 export type students = {
     id: GeneratedAlways<string>;
+    firstName: string;
+    middleName: string | null;
+    lastName: string;
+    email: string;
+    regNumber: string;
 };
 export type teachers = {
     id: GeneratedAlways<string>;
@@ -83,10 +97,12 @@ export type tests = {
     updatedAt: Generated<Timestamp>;
 };
 export type DB = {
+    _StudentClasses: StudentClasses;
+    classes: classes;
     institutions: institutions;
     media: media;
     questions: questions;
-    student_classes: student_classes;
+    student_class: student_class;
     students: students;
     teachers: teachers;
     tests: tests;
