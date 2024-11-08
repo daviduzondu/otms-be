@@ -33,7 +33,7 @@ export class TestService {
   async createNewTest(payload: CreateTestDto, req: Request) {
     Object.assign(payload, {
       code: await this.generateTestCode(),
-      teacherId: (req as any).teacher.id,
+      teacherId: (req as any).user.id,
     } as tests);
 
     const test = await this.db.insertInto('tests').values(payload).returningAll().executeTakeFirst();
