@@ -17,8 +17,7 @@ export class TestService {
   constructor(
     @InjectKysesly() private db: Database,
     private readonly emailService: EmailService,
-  ) {
-  }
+  ) {}
 
   private async generateTestCode() {
     return customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 21)(7);
@@ -106,7 +105,6 @@ export class TestService {
       throw new CustomException('Some students in this list do not exist', HttpStatus.NOT_FOUND);
     }
 
-
     // Get the teacher
     const teacher = await this.db
       .selectFrom('teachers')
@@ -130,5 +128,9 @@ export class TestService {
         email: x.email,
       })),
     });
+
+    return {
+      message: 'Mail sent to all receipients',
+    };
   }
 }

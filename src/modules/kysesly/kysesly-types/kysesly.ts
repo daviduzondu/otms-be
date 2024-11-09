@@ -4,7 +4,7 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
-import type { QuestionType, MediaType, AuthType, TestStatus } from "./enums";
+import type { AuthType, MediaType, QuestionType, TestStatus } from "./enums";
 
 export type classes = {
     id: GeneratedAlways<string>;
@@ -22,23 +22,23 @@ export type media = {
     id: GeneratedAlways<string>;
     type: MediaType;
     url: string;
-    teacherId: string;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
+    teacherId: string;
 };
 export type questions = {
     id: GeneratedAlways<string>;
     testId: string;
     type: QuestionType;
     options: string[];
-    index: Generated<number>;
-    points: Generated<number>;
     correctAnswer: string | null;
     body: string;
     mediaId: string | null;
-    isDeleted: Generated<boolean>;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
+    points: Generated<number>;
+    isDeleted: Generated<boolean>;
+    index: Generated<number>;
 };
 export type student_class = {
     id: GeneratedAlways<string>;
@@ -52,19 +52,17 @@ export type StudentClasses = {
 };
 export type students = {
     id: GeneratedAlways<string>;
-    firstName: string;
-    middleName: string | null;
-    lastName: string;
     email: string;
     regNumber: string;
+    firstName: string;
+    lastName: string;
+    middleName: string | null;
+    addedBy: string;
 };
 export type teachers = {
     id: GeneratedAlways<string>;
     firstName: string;
     lastName: string | null;
-    /**
-     * @email
-     */
     email: string;
     password: string | null;
     photoId: string | null;
@@ -77,24 +75,24 @@ export type teachers = {
 };
 export type tests = {
     id: GeneratedAlways<string>;
-    teacherId: string;
-    title: string;
-    instructions: string | null;
-    printCount: number | null;
-    passingScore: Generated<number | null>;
-    requireFullScreen: Generated<boolean | null>;
-    showCorrectAnswers: Generated<boolean | null>;
-    disableCopyPaste: Generated<boolean | null>;
-    provideExplanations: Generated<boolean | null>;
-    randomizeQuestions: Generated<boolean | null>;
-    startsAt: Timestamp | null;
     endsAt: Timestamp | null;
-    isRevoked: Generated<boolean>;
-    isDeleted: Generated<boolean>;
     institutionId: string | null;
-    code: string | null;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
+    code: string | null;
+    printCount: number | null;
+    instructions: string | null;
+    title: string;
+    isDeleted: Generated<boolean>;
+    isRevoked: Generated<boolean>;
+    startsAt: Timestamp | null;
+    disableCopyPaste: Generated<boolean | null>;
+    passingScore: Generated<number | null>;
+    provideExplanations: Generated<boolean | null>;
+    randomizeQuestions: Generated<boolean | null>;
+    requireFullScreen: Generated<boolean | null>;
+    showCorrectAnswers: Generated<boolean | null>;
+    teacherId: string;
 };
 export type DB = {
     _StudentClasses: StudentClasses;

@@ -81,6 +81,8 @@ model students {
   middleName    String?
   student_class student_class[]
   classes       classes[]       @relation("StudentClasses")
+  addedBy       String
+  teacherId     teachers        @relation(fields: [addedBy], references: [id])
 }
 
 model teachers {
@@ -101,6 +103,7 @@ model teachers {
   institutions                    institutions? @relation(fields: [institutionId], references: [id])
   media_teachers_photoIdTomedia   media?        @relation("teachers_photoIdTomedia", fields: [photoId], references: [id])
   tests                           tests[]
+  students                        students[]
 }
 
 model tests {

@@ -58,4 +58,21 @@ export class UsersService {
       data: student,
     };
   }
+
+  async findStudent(email: string, req: any) {
+    // await new Promise((res) => setTimeout(res, 3000));
+    const student = await this.db
+      .selectFrom('students')
+      .selectAll()
+      .where('addedBy', '=', req.user.id)
+      .where('email', '=', email)
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException('Could not find student', HttpStatus.NOT_FOUND);
+      });
+
+    return {
+      message: 'Student found',
+      data: student,
+    };
+  }
 }
