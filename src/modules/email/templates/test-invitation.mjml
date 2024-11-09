@@ -9,15 +9,8 @@
     </mj-head>
     <mj-body background-color="#f8fafc">
         <mj-wrapper background-color="#ffffff" border-radius="12px" padding="20px">
-            <!-- Header Section -->
-            <mj-section padding="20px" background-color="#3182ce">
-                <mj-column>
-                    <mj-text align="center" color="#f0f8ff">OTMS</mj-text>
-                </mj-column>
-            </mj-section>
-
             <!-- Invitation Text Section -->
-            <mj-section padding="40px 30px 20px">
+            <mj-section padding="0px 30px 20px">
                 <mj-column>
                     <mj-text font-size="24px" font-weight="bold" color="#2d3748" align="center" padding-bottom="10px">You've Been Invited to Take a Test</mj-text>
                     <mj-text font-size="16px" color="#4a5568" align="left" padding="20px 0 0">
@@ -34,7 +27,7 @@
                         If the button above doesn't work, copy and paste this link into your browser:
                     </mj-text>
                     <mj-text font-size="16px" color="#4299e1" align="left" padding="10px 0" >
-                        <a href="{{required testUrl}}" style="text-decoration: underline;">{{required testUrl}}</a>
+                        <a href="{{required fallbackUrl}}" style="text-decoration: underline;">{{required testUrl}}</a>
                     </mj-text>
                 </mj-column>
             </mj-section>

@@ -25,6 +25,9 @@ import { ClassesModule } from './modules/classes/classes.module';
       validationSchema: Joi.object({
         DATABASE_URL: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
+        PORT: Joi.number().required(),
+        BREVO_API_KEY: Joi.string().required(),
+        FRONTEND_BASE_URL: Joi.string().required(),
       }),
     }),
     JwtModule.register({

@@ -7,6 +7,8 @@ import { tests } from '../kysesly/kysesly-types/kysesly';
 import { CustomException } from '../../exceptions/custom.exception';
 import { EmailService } from '../email/email.service';
 import { SendTestInvitationMailDto } from './dto/send-test.dto';
+import path from 'node:path';
+import { ConfigService } from '@nestjs/config';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { customAlphabet } = require('fix-esm').require('nanoid');
 
@@ -99,6 +101,10 @@ export class TestService {
 
     // Get the students
     const results = await this.db.selectFrom('students').selectAll().where('id', 'in', students).execute();
+    console.log(results);
+    if (results.length === 0) {
+      throw new CustomException('Some students in this list do not exist', HttpStatus.NOT_FOUND);
+    }
 
     // Get the teacher
     const teacher = await this.db
@@ -107,15 +113,17 @@ export class TestService {
       .where('id', '=', (req as any).user.id)
       .executeTakeFirst();
 
+    const testUrl = new URL(path.join(new ConfigService().get('FRONTEND_BASE_URL'), 't', `${test.code}?token=somethingrandom`));
     await this.emailService.sendEmail({
       to: results.map((x) => ({ email: x.email, name: `${x.firstName} ${x.lastName}` })),
       subject: 'You have been invited to take a test!',
       templateName: 'test-invitation',
       context: results.map((x) => ({
+        testUrl,
         studentName: `${x.firstName} ${x.lastName}`,
         teacherName: `${teacher.firstName} ${teacher.lastName}`,
         testName: test.title,
-        testUrl: 'https://example.com/test-link',
+        fallbackUrl: testUrl,
         email: x.email,
       })),
     });
