@@ -102,12 +102,11 @@ export class TestService {
 
     // Get the students
     const results = await this.db.selectFrom('students').selectAll().where('id', 'in', students).execute();
-    console.log(results);
     if (results.length === 0) {
       throw new CustomException('Some students in this list do not exist', HttpStatus.NOT_FOUND);
     }
 
-    console.log((req as any).user.id)
+
     // Get the teacher
     const teacher = await this.db
       .selectFrom('teachers')
