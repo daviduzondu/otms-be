@@ -17,7 +17,8 @@ export class TestService {
   constructor(
     @InjectKysesly() private db: Database,
     private readonly emailService: EmailService,
-  ) {}
+  ) {
+  }
 
   private async generateTestCode() {
     return customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 21)(7);
@@ -106,12 +107,15 @@ export class TestService {
       throw new CustomException('Some students in this list do not exist', HttpStatus.NOT_FOUND);
     }
 
+    console.log((req as any).user.id)
     // Get the teacher
     const teacher = await this.db
       .selectFrom('teachers')
       .selectAll()
       .where('id', '=', (req as any).user.id)
-      .executeTakeFirst();
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException('Teacher not found!', HttpStatus.NOT_FOUND);
+      });
 
     const testUrl = new URL(path.join(new ConfigService().get('FRONTEND_BASE_URL'), 't', `${test.code}?token=somethingrandom`));
     await this.emailService.sendEmail({
