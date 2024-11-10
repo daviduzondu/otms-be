@@ -31,7 +31,6 @@ export class ClassService {
   }
 
   async getClasses(req) {
-    await new Promise((res) => setTimeout(res, 10900));
     const classes = await this.db
       .selectFrom('classes')
       .leftJoin('student_class', 'classes.id', 'classId')
