@@ -1,13 +1,13 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Req, UseGuards } from '@nestjs/common';
-import { ClassesService } from './classes.service';
+import { ClassService } from './class.service';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CreateClassDto } from './dto/class.dto';
 import { AddStudentToClassDto } from '../users/dto/student.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('class')
-export class ClassesController {
-  constructor(private readonly classesService: ClassesService) {}
+export class ClassController {
+  constructor(private readonly classesService: ClassService) {}
 
   @Get()
   async getClasses(@Req() req) {

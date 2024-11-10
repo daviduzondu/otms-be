@@ -13,7 +13,7 @@ import { TestsModule } from './modules/test-mgmt/tests.module';
 import { QuestionsModule } from './modules/questions/questions.module';
 import { EmailModule } from './modules/email/email.module';
 import { EmailService } from './modules/email/email.service';
-import { ClassesModule } from './modules/classes/classes.module';
+import { ClassModule } from './modules/./class/class.module';
 
 @Module({
   imports: [
@@ -41,7 +41,7 @@ import { ClassesModule } from './modules/classes/classes.module';
     TestsModule,
     QuestionsModule,
     EmailModule,
-    ClassesModule,
+    ClassModule,
   ],
   controllers: [AppController],
   providers: [AppService, AuthService, EmailService],

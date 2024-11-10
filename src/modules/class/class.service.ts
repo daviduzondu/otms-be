@@ -8,7 +8,7 @@ import { AddStudentToClassDto } from '../users/dto/student.dto';
 
 @Injectable()
 @UseGuards(JwtAuthGuard)
-export class ClassesService {
+export class ClassService {
   constructor(@InjectKysesly() private readonly db: Database) {}
 
   async getClassDetails(classId: string) {
@@ -31,15 +31,17 @@ export class ClassesService {
   }
 
   async getClasses(req) {
+    await new Promise((res) => setTimeout(res, 10900));
     const classes = await this.db
       .selectFrom('classes')
       .leftJoin('student_class', 'classes.id', 'classId')
       .leftJoin('students', 'students.id', 'studentId')
       .select([
-        'classes.id as id', // Ensure we're always selecting classes.id as a fallback
+        'classes.id as id', // Ensure we're always selecting class.id as a fallback
         'name',
         'students.firstName',
         'students.lastName',
+        'students.email',
         'regNumber',
         'students.id as studentId',
       ])
@@ -53,6 +55,7 @@ export class ClassesService {
         name: students[0].name,
         students: students
           .filter((student) => student.studentId !== null) // Filter out empty student entries
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           .map(({ name, studentId: id, ...rest }) => ({ ...rest, id })),
       })),
     };

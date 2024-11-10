@@ -1,4 +1,4 @@
-import { IsDateString, IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsEmail, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateStudentDto {
   @IsString()
@@ -16,6 +16,14 @@ export class CreateStudentDto {
 
   @IsEmail()
   email: string;
+
+  @IsOptional()
+  @IsDateString()
+  removeAfter: Date;
+
+  @IsOptional()
+  @IsUUID()
+  classId: string;
 }
 
 export class AddStudentToClassDto {
@@ -26,5 +34,5 @@ export class AddStudentToClassDto {
   classId: string;
 
   @IsDateString()
-  removeAfter: string;
+  removeAfter: Date;
 }

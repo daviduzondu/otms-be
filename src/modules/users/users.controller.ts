@@ -15,12 +15,12 @@ export class UsersController {
   }
 
   @Post('add-student')
-  async addStudent(@Req() reg, @Body() createStudentDto: CreateStudentDto) {
-    return await this.usersService.createStudent(createStudentDto);
+  async addStudent(@Req() reg, @Body() createStudentDto: CreateStudentDto, @Req() req: Request) {
+    return await this.usersService.createStudent(createStudentDto, req);
   }
 
   @Get('find-student')
   async findStudentByEmail(@Query('email') email: string, @Req() req: Request) {
-    return await this.usersService.findStudent(email, req);
+    return await this.usersService.findStudentByEmail(email, req);
   }
 }

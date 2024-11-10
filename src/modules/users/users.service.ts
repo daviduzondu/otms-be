@@ -3,10 +3,14 @@ import { Database } from '../kysesly/database';
 import { InjectKysesly } from '../kysesly/decorators/inject-repository';
 import { CreateStudentDto } from './dto/student.dto';
 import { CustomException } from '../../exceptions/custom.exception';
+import { ClassService } from '../class/class.service';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectKysesly() private db: Database) {}
+  constructor(
+    @InjectKysesly() private db: Database,
+    private readonly classService: ClassService,
+  ) {}
 
   async getTeacherRecord({ teacherId, email }: { teacherId?: string; email?: string }) {
     return await this.db
@@ -44,14 +48,22 @@ export class UsersService {
     };
   }
 
-  async createStudent(CreateStudentDto: CreateStudentDto) {
+  async createStudent(createStudentDto: CreateStudentDto, req) {
     const student = await this.db
       .insertInto('students')
-      .values(CreateStudentDto)
+      .values(Object.assign(createStudentDto, { addedBy: req.user.id }))
       .returningAll()
       .executeTakeFirstOrThrow(() => {
         return new CustomException('Failed to add student', HttpStatus.BAD_REQUEST);
       });
+
+    if (createStudentDto.removeAfter && createStudentDto.classId) {
+      return await this.classService.addStudentToClass({
+        studentId: student.id,
+        removeAfter: createStudentDto.removeAfter,
+        classId: createStudentDto.classId,
+      });
+    }
 
     return {
       message: 'Student created successfully',
@@ -59,7 +71,7 @@ export class UsersService {
     };
   }
 
-  async findStudent(email: string, req: any) {
+  async findStudentByEmail(email: string, req: any) {
     // await new Promise((res) => setTimeout(res, 3000));
     const student = await this.db
       .selectFrom('students')
