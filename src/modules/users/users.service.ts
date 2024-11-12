@@ -49,19 +49,20 @@ export class UsersService {
   }
 
   async createStudent(createStudentDto: CreateStudentDto, req) {
+    const createStudentDtoClone = structuredClone(createStudentDto);
     const student = await this.db
       .insertInto('students')
-      .values(Object.assign(createStudentDto, { addedBy: req.user.id }))
+      .values(Object.assign(createStudentDto, { addedBy: req.user.id, classId: undefined, removeAfter: undefined }))
       .returningAll()
       .executeTakeFirstOrThrow(() => {
         return new CustomException('Failed to add student', HttpStatus.BAD_REQUEST);
       });
 
-    if (createStudentDto.removeAfter && createStudentDto.classId) {
+    if (createStudentDtoClone.removeAfter && createStudentDtoClone.classId) {
       return await this.classService.addStudentToClass({
         studentId: student.id,
-        removeAfter: createStudentDto.removeAfter,
-        classId: createStudentDto.classId,
+        removeAfter: createStudentDtoClone.removeAfter,
+        classId: createStudentDtoClone.classId,
       });
     }
 

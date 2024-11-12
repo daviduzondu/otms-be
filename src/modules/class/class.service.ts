@@ -89,20 +89,22 @@ export class ClassService {
       .selectFrom('classes')
       .selectAll()
       .where('teacherId', '=', (req as any).user.id)
-      .where('name', '=', name)
+      .where('name', '=', name.toLowerCase())
       .executeTakeFirst();
 
     if (classExists) {
       throw new CustomException(`You already have a class called "${name}"`, HttpStatus.CONFLICT);
     }
 
-    await this.db
+    const classInfo = await this.db
       .insertInto('classes')
       .values({ name, teacherId: (req as any).user.id })
-      .execute();
+      .returning(['id', 'name'])
+      .executeTakeFirst();
 
     return {
       message: 'Class created successfully',
+      data: Object.assign(classInfo, { students: [] }),
     };
   }
 }
