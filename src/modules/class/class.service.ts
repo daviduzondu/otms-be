@@ -77,10 +77,10 @@ export class ClassService {
     }
 
     // Add the student to the class
-    await this.db.insertInto('student_class').values(addStudentToClassDto).returningAll().execute();
-
+    const result = await this.db.insertInto('student_class').values(addStudentToClassDto).returning(['studentId as id', 'classId']).executeTakeFirst();
     return {
       message: 'Student successfully added to class',
+      data: result,
     };
   }
 
