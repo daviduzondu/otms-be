@@ -44,4 +44,8 @@ export class CreateQuestionDto {
   @IsUUID()
   @IsOptional()
   mediaId: string;
+
+  @IsNumber()
+  @IsOptional()
+  timeLimit: string;
 }

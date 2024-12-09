@@ -18,12 +18,12 @@ export class CreateTestDto {
     message: 'Title can only contain letters, numbers, and spaces',
   })
   title: string;
-
-  @IsDateString()
-  startsAt: string;
-
-  @IsDateString()
-  endsAt: string;
+    //
+    // @IsDateString()
+    // startsAt: string;
+    //
+    // @IsDateString()
+    // endsAt: string;
 
   @IsOptional()
   @IsString()

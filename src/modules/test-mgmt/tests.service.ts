@@ -115,6 +115,7 @@ export class TestService {
       });
 
     const testUrl = new URL(path.join(new ConfigService().get('FRONTEND_BASE_URL'), 't', `${test.code}?token=somethingrandom`));
+
     await this.emailService.sendEmail({
       to: results.map((x) => ({ email: x.email, name: `${x.firstName} ${x.lastName}` })),
       subject: 'You have been invited to take a test!',
@@ -128,6 +129,7 @@ export class TestService {
         email: x.email,
       })),
     });
+
 
     return {
       message: 'Mail sent to all receipients',

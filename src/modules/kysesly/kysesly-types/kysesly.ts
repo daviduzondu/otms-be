@@ -4,7 +4,7 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
-import type { AuthType, MediaType, QuestionType, TestStatus } from "./enums";
+import type { AttemptStatus, AuthType, MediaType, QuestionType, TestStatus } from "./enums";
 
 export type classes = {
     id: GeneratedAlways<string>;
@@ -31,6 +31,7 @@ export type questions = {
     testId: string;
     type: QuestionType;
     options: string[];
+    timeLimit: number | null;
     correctAnswer: string | null;
     body: string;
     mediaId: string | null;
@@ -40,11 +41,30 @@ export type questions = {
     isDeleted: Generated<boolean>;
     index: Generated<number>;
 };
+export type student_answers = {
+    id: GeneratedAlways<string>;
+    studentId: string;
+    questionId: string;
+    testId: string;
+    isTouched: Generated<boolean>;
+    point: Generated<number>;
+    isCorrect: Generated<boolean>;
+    createdAt: Generated<Timestamp>;
+    updatedAt: Generated<Timestamp>;
+};
 export type student_class = {
     id: GeneratedAlways<string>;
     studentId: string;
     classId: string;
     removeAfter: Timestamp;
+};
+export type student_tokens = {
+    id: GeneratedAlways<string>;
+    studentId: string;
+    testId: string;
+    accessToken: string;
+    createdAt: Generated<Timestamp>;
+    updatedAt: Generated<Timestamp>;
 };
 export type StudentClasses = {
     A: string;
@@ -73,19 +93,36 @@ export type teachers = {
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
+export type test_attempts = {
+    id: GeneratedAlways<string>;
+    testId: string;
+    studentId: string;
+    questions: string[];
+    startedAt: Timestamp;
+    endsAt: Timestamp;
+    status: Generated<AttemptStatus>;
+    createdAt: Generated<Timestamp>;
+    updatedAt: Generated<Timestamp>;
+};
+export type test_participants = {
+    id: GeneratedAlways<string>;
+    studentId: string;
+    testId: string;
+    createdAt: Generated<Timestamp>;
+    updatedAt: Generated<Timestamp>;
+};
 export type tests = {
     id: GeneratedAlways<string>;
-    endsAt: Timestamp | null;
     institutionId: string | null;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
     code: string | null;
     printCount: number | null;
+    durationMin: Generated<number>;
     instructions: string | null;
     title: string;
     isDeleted: Generated<boolean>;
     isRevoked: Generated<boolean>;
-    startsAt: Timestamp | null;
     disableCopyPaste: Generated<boolean | null>;
     passingScore: Generated<number | null>;
     provideExplanations: Generated<boolean | null>;
@@ -100,8 +137,12 @@ export type DB = {
     institutions: institutions;
     media: media;
     questions: questions;
+    student_answers: student_answers;
     student_class: student_class;
+    student_tokens: student_tokens;
     students: students;
     teachers: teachers;
+    test_attempts: test_attempts;
+    test_participants: test_participants;
     tests: tests;
 };

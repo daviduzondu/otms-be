@@ -1,3 +1,8 @@
+export const AttemptStatus = {
+    submitted: "submitted",
+    unsubmitted: "unsubmitted"
+} as const;
+export type AttemptStatus = (typeof AttemptStatus)[keyof typeof AttemptStatus];
 export const AuthType = {
     local: "local",
     google: "google"

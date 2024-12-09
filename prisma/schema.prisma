@@ -47,20 +47,22 @@ model media {
 }
 
 model questions {
-  id            String       @id @default(dbgenerated("gen_random_uuid()"))
-  testId        String
-  type          QuestionType
-  options       String[]
-  correctAnswer String?
-  body          String
-  mediaId       String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @default(now())
-  points        Int          @default(10)
-  isDeleted     Boolean      @default(false)
-  index         Int          @default(0)
-  media         media?       @relation(fields: [mediaId], references: [id])
-  tests         tests        @relation(fields: [testId], references: [id])
+  id              String            @id @default(dbgenerated("gen_random_uuid()"))
+  testId          String
+  type            QuestionType
+  options         String[]
+  timeLimit       Int?
+  correctAnswer   String?
+  body            String
+  mediaId         String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @default(now())
+  points          Int               @default(10)
+  isDeleted       Boolean           @default(false)
+  index           Int               @default(0)
+  media           media?            @relation(fields: [mediaId], references: [id])
+  tests           tests             @relation(fields: [testId], references: [id])
+  student_answers student_answers[]
 }
 
 model student_class {
@@ -73,16 +75,20 @@ model student_class {
 }
 
 model students {
-  id            String          @id @default(dbgenerated("gen_random_uuid()"))
-  email         String
-  regNumber     String
-  firstName     String
-  lastName      String
-  middleName    String?
-  student_class student_class[]
-  classes       classes[]       @relation("StudentClasses")
-  addedBy       String
-  teacherId     teachers        @relation(fields: [addedBy], references: [id])
+  id                String              @id @default(dbgenerated("gen_random_uuid()"))
+  email             String
+  regNumber         String
+  firstName         String
+  lastName          String
+  middleName        String?
+  student_class     student_class[]
+  classes           classes[]           @relation("StudentClasses")
+  addedBy           String
+  teacherId         teachers            @relation(fields: [addedBy], references: [id])
+  test_attempts     test_attempts[]
+  student_tokens    student_tokens[]
+  student_answers   student_answers[]
+  test_participants test_participants[]
 }
 
 model teachers {
@@ -107,28 +113,92 @@ model teachers {
 }
 
 model tests {
-  id                  String        @id @default(dbgenerated("gen_random_uuid()"))
-  endsAt              DateTime?
+  id                  String              @id @default(dbgenerated("gen_random_uuid()"))
   institutionId       String?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @default(now())
-  code                String?       @unique
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @default(now())
+  code                String?             @unique
   printCount          Int?
+  durationMin         Int                 @default(60)
   instructions        String?
   title               String
-  isDeleted           Boolean       @default(false)
-  isRevoked           Boolean       @default(false)
-  startsAt            DateTime?
-  disableCopyPaste    Boolean?      @default(false)
-  passingScore        Int?          @default(70)
-  provideExplanations Boolean?      @default(false)
-  randomizeQuestions  Boolean?      @default(false)
-  requireFullScreen   Boolean?      @default(false)
-  showCorrectAnswers  Boolean?      @default(false)
+  isDeleted           Boolean             @default(false)
+  isRevoked           Boolean             @default(false)
+  disableCopyPaste    Boolean?            @default(false)
+  passingScore        Int?                @default(70)
+  provideExplanations Boolean?            @default(false)
+  randomizeQuestions  Boolean?            @default(false)
+  requireFullScreen   Boolean?            @default(false)
+  showCorrectAnswers  Boolean?            @default(false)
   teacherId           String
   questions           questions[]
-  institutions        institutions? @relation(fields: [institutionId], references: [id])
-  teachers            teachers      @relation(fields: [teacherId], references: [id])
+  institutions        institutions?       @relation(fields: [institutionId], references: [id])
+  teachers            teachers            @relation(fields: [teacherId], references: [id])
+  test_attempts       test_attempts[]
+  student_tokens      student_tokens[]
+  student_answers     student_answers[]
+  test_participants   test_participants[]
+}
+
+model test_attempts {
+  id        String        @id @default(dbgenerated("gen_random_uuid()"))
+  testId    String
+  studentId String
+  questions String[]
+  startedAt DateTime
+  endsAt    DateTime
+  status    AttemptStatus @default(unsubmitted)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @default(now())
+
+  tests    tests    @relation(fields: [testId], references: [id])
+  students students @relation(fields: [studentId], references: [id])
+
+  @@unique([testId, studentId])
+}
+
+model test_participants {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  studentId String
+  testId    String
+  test      tests    @relation(fields: [testId], references: [id])
+  student   students @relation(fields: [studentId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
+
+model student_answers {
+  id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  studentId  String
+  questionId String
+  testId     String
+  isTouched  Boolean  @default(false)
+  point      Int      @default(0)
+  isCorrect  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  student  students  @relation(fields: [studentId], references: [id])
+  question questions @relation(fields: [questionId], references: [id])
+  test     tests     @relation(fields: [testId], references: [id])
+
+  @@unique([questionId, studentId, testId])
+}
+
+model student_tokens {
+  id          String   @id @default(dbgenerated("gen_random_uuid()"))
+  studentId   String
+  testId      String
+  student     students @relation(fields: [studentId], references: [id])
+  test        tests    @relation(fields: [testId], references: [id])
+  accessToken String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+}
+
+enum AttemptStatus {
+  submitted
+  unsubmitted
 }
 
 enum AuthType {
