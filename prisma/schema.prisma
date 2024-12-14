@@ -16,12 +16,13 @@ datasource db {
 }
 
 model classes {
-  id            String          @id @default(dbgenerated("gen_random_uuid()"))
-  name          String
-  teacherId     String
-  teachers      teachers        @relation(fields: [teacherId], references: [id])
-  student_class student_class[]
-  students      students[]      @relation("StudentClasses")
+  id                String              @id @default(dbgenerated("gen_random_uuid()"))
+  name              String
+  teacherId         String
+  teachers          teachers            @relation(fields: [teacherId], references: [id])
+  student_class     student_class[]
+  students          students[]          @relation("StudentClasses")
+  test_participants test_participants[]
 }
 
 model institutions {
@@ -62,7 +63,7 @@ model questions {
   index           Int               @default(0)
   media           media?            @relation(fields: [mediaId], references: [id])
   tests           tests             @relation(fields: [testId], references: [id])
-  student_answers student_answers[]
+  student_grading student_grading[]
 }
 
 model student_class {
@@ -87,7 +88,7 @@ model students {
   teacherId         teachers            @relation(fields: [addedBy], references: [id])
   test_attempts     test_attempts[]
   student_tokens    student_tokens[]
-  student_answers   student_answers[]
+  student_grading   student_grading[]
   test_participants test_participants[]
 }
 
@@ -136,7 +137,7 @@ model tests {
   teachers            teachers            @relation(fields: [teacherId], references: [id])
   test_attempts       test_attempts[]
   student_tokens      student_tokens[]
-  student_answers     student_answers[]
+  student_grading     student_grading[]
   test_participants   test_participants[]
 }
 
@@ -158,16 +159,20 @@ model test_attempts {
 }
 
 model test_participants {
-  id        String   @id @default(dbgenerated("gen_random_uuid()"))
-  studentId String
-  testId    String
-  test      tests    @relation(fields: [testId], references: [id])
-  student   students @relation(fields: [studentId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  id            String   @id @default(dbgenerated("gen_random_uuid()"))
+  studentId     String
+  testId        String
+  origin        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now())
+  test          tests    @relation(fields: [testId], references: [id])
+  student       students @relation(fields: [studentId], references: [id])
+  student_class classes? @relation(fields: [origin], references: [id])
+
+  @@unique([testId, studentId])
 }
 
-model student_answers {
+model student_grading {
   id         String   @id @default(dbgenerated("gen_random_uuid()"))
   studentId  String
   questionId String
@@ -186,14 +191,16 @@ model student_answers {
 }
 
 model student_tokens {
-  id          String   @id @default(dbgenerated("gen_random_uuid()"))
-  studentId   String
-  testId      String
-  student     students @relation(fields: [studentId], references: [id])
-  test        tests    @relation(fields: [testId], references: [id])
-  accessToken String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now())
+  id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  studentId  String
+  testId     String
+  accessCode String
+  student    students @relation(fields: [studentId], references: [id])
+  test       tests    @relation(fields: [testId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  @@unique([testId, studentId, accessCode])
 }
 
 enum AttemptStatus {

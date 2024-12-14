@@ -5,37 +5,40 @@ import { Database } from '../kysesly/database';
 import { CreateClassDto } from './dto/class.dto';
 import { CustomException } from '../../exceptions/custom.exception';
 import { AddStudentToClassDto } from '../users/dto/student.dto';
+import { sql } from 'kysely';
 
 @Injectable()
 @UseGuards(JwtAuthGuard)
 export class ClassService {
   constructor(@InjectKysesly() private readonly db: Database) {}
 
-  async getClassDetails(classId: string) {
-    const classDetails = await this.db.selectFrom('classes').innerJoin('student_class', 'classes.id', 'student_class.classId').innerJoin('students', 'students.id', 'student_class.studentId').select(['classes.id as id', 'classes.name as name', 'students.id as studentId', 'firstName', 'lastName', 'regNumber', 'middleName', 'removeAfter']).where('classes.id', '=', classId).execute();
+  // async getClassDetails(classId: string, testId: string) {
+  //   const classDetails = await this.db.selectFrom('classes').innerJoin('student_class', 'classes.id', 'student_class.classId').innerJoin('students', 'students.id', 'student_class.studentId').select(({ eb, selectFrom, or })=>['classes.id as id', 'classes.name as name', 'students.id as studentId', 'firstName', 'lastName', 'regNumber', 'middleName', 'removeAfter', selectFrom('test_participants').where('test_participants.studentId', '=', 'studentId').select("test_participants.studentId").as("isParticipant")]).where('classes.id', '=', classId).execute();
+  //
+  //   console.log(classDetails);
+  //   const formattedClass = {
+  //     id: classDetails[0]?.id,
+  //     name: classDetails[0]?.name,
+  //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //     students: classDetails.map(({ studentId, id, removeAfter, name, ...rest }) => ({
+  //       id: studentId,
+  //       ...rest,
+  //     })),
+  //   };
+  //
+  //   return {
+  //     message: 'Class retrieved successfully',
+  //     data: formattedClass,
+  //   };
+  // }
 
-    const formattedClass = {
-      id: classDetails[0]?.id,
-      name: classDetails[0]?.name,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      students: classDetails.map(({ studentId, id, removeAfter, name, ...rest }) => ({
-        id: studentId,
-        ...rest,
-      })),
-    };
-
-    return {
-      message: 'Class retrieved successfully',
-      data: formattedClass,
-    };
-  }
-
-  async getClasses(req) {
+  async getClasses(req, testId: string) {
     const classes = await this.db
       .selectFrom('classes')
       .leftJoin('student_class', 'classes.id', 'classId')
       .leftJoin('students', 'students.id', 'studentId')
-      .select([
+      .leftJoin('test_participants', (qb) => qb.onRef('test_participants.studentId', '=', 'student_class.studentId').on('test_participants.testId', '=', testId))
+      .select(({ eb, selectFrom }) => [
         'classes.id as id', // Ensure we're always selecting class.id as a fallback
         'name',
         'students.firstName',
@@ -43,6 +46,8 @@ export class ClassService {
         'students.email',
         'regNumber',
         'students.id as studentId',
+        sql`CASE WHEN test_participants.id IS NOT NULL THEN TRUE ELSE FALSE END`.as('isParticipant'),
+        'test_participants.origin as origin'
       ])
       .where('teacherId', '=', (req as any).user.id)
       .execute();
@@ -55,7 +60,10 @@ export class ClassService {
         students: students
           .filter((student) => student.studentId !== null) // Filter out empty student entries
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          .map(({ name, studentId: id, ...rest }) => ({ ...rest, id })),
+          .map(({ name, studentId: id, ...rest }) => ({
+            ...rest,
+            id,
+          })),
       })),
     };
   }

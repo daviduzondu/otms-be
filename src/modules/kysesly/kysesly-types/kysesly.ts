@@ -41,7 +41,13 @@ export type questions = {
     isDeleted: Generated<boolean>;
     index: Generated<number>;
 };
-export type student_answers = {
+export type student_class = {
+    id: GeneratedAlways<string>;
+    studentId: string;
+    classId: string;
+    removeAfter: Timestamp;
+};
+export type student_grading = {
     id: GeneratedAlways<string>;
     studentId: string;
     questionId: string;
@@ -52,17 +58,11 @@ export type student_answers = {
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
-export type student_class = {
-    id: GeneratedAlways<string>;
-    studentId: string;
-    classId: string;
-    removeAfter: Timestamp;
-};
 export type student_tokens = {
     id: GeneratedAlways<string>;
     studentId: string;
     testId: string;
-    accessToken: string;
+    accessCode: string;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
@@ -108,6 +108,7 @@ export type test_participants = {
     id: GeneratedAlways<string>;
     studentId: string;
     testId: string;
+    origin: string | null;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
@@ -137,8 +138,8 @@ export type DB = {
     institutions: institutions;
     media: media;
     questions: questions;
-    student_answers: student_answers;
     student_class: student_class;
+    student_grading: student_grading;
     student_tokens: student_tokens;
     students: students;
     teachers: teachers;

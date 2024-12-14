@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ClassService } from './class.service';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CreateClassDto } from './dto/class.dto';
@@ -10,14 +10,14 @@ export class ClassController {
   constructor(private readonly classesService: ClassService) {}
 
   @Get()
-  async getClasses(@Req() req) {
-    return await this.classesService.getClasses(req);
+  async getClasses(@Req() req, @Query('showTestParticipationStatus') testId: string) {
+    return await this.classesService.getClasses(req, testId);
   }
 
-  @Get(':id/students')
-  async getAllStudents(@Param('id', ParseUUIDPipe) classId: string) {
-    return await this.classesService.getClassDetails(classId);
-  }
+  // @Get(':id/students')
+  // async getAllStudents(@Param('id', ParseUUIDPipe) classId: string, @Query('testId', ParseUUIDPipe) testId: string) {
+  //   return await this.classesService.getClassDetails(classId, testId);
+  // }
 
   @Post()
   async createClass(@Body() createClassDto: CreateClassDto, @Req() req) {

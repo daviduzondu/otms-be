@@ -9,6 +9,7 @@ import { EmailService } from '../email/email.service';
 import { SendTestInvitationMailDto } from './dto/send-test.dto';
 import path from 'node:path';
 import { ConfigService } from '@nestjs/config';
+import { AddParticipantDto } from './dto/participant.dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { customAlphabet } = require('fix-esm').require('nanoid');
 
@@ -21,6 +22,10 @@ export class TestService {
 
   private async generateTestCode() {
     return customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 21)(7);
+  }
+
+  private generateAccessCode() {
+    return customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 12)();
   }
 
   // async getTestRecordByUser(testId: string, req: any) {
@@ -43,6 +48,60 @@ export class TestService {
     return {
       message: 'Test Creation Sucessful',
       data: test,
+    };
+  }
+
+  async addParticipant(addParticipantDto: AddParticipantDto) {
+    // Check if the student exists
+    let students = await this.db
+      .selectFrom('students')
+      .leftJoin('student_tokens', 'student_tokens.studentId', 'students.id')
+      .select(['students.id as studentId', 'student_tokens.accessCode as accessCode'])
+      .where(
+        'students.id',
+        'in',
+        addParticipantDto.students.map((x) => x.studentId),
+      )
+      .execute();
+
+    if (students.length === 0) throw new CustomException('One or more students in the list do not exist', HttpStatus.NOT_FOUND);
+
+    // Generate access code for students without them
+    const data = addParticipantDto.students.map((student) => {
+      const existingStudentWithToken = students.find((x) => x.accessCode && x.studentId === student.studentId);
+
+      if (!existingStudentWithToken) {
+        return { ...student, origin: undefined, accessCode: this.generateAccessCode() };
+      } else {
+        return { ...student, origin: undefined, accessCode: existingStudentWithToken.accessCode };
+      }
+    });
+
+    // // Check if the student is already in the participants
+    // const studentAlreadyAParticipant = await this.db.selectFrom('test_participants').selectAll().where('studentId', '=', addParticipantDto.studentId).where('testId', '=', addParticipantDto.testId).executeTakeFirst();
+    //
+    // if (studentAlreadyAParticipant) {
+    //   throw new CustomException('Student already a participant', HttpStatus.CONFLICT);
+    // }
+
+    // Add the student to the participants
+    const result = await this.db
+      .insertInto('test_participants')
+      .values(addParticipantDto.students)
+      .returning(['studentId as id', 'testId'])
+      .onConflict((oc) => oc.columns(['testId', 'studentId']).doNothing())
+      .executeTakeFirst();
+
+    // Generate access token for that student
+    await this.db
+      .insertInto('student_tokens')
+      .values(data)
+      .onConflict((oc) => oc.columns(['testId', 'studentId', 'accessCode']).doNothing())
+      .execute();
+
+    return {
+      message: 'Student successfully added to participants',
+      data: result,
     };
   }
 
@@ -89,6 +148,34 @@ export class TestService {
     };
   }
 
+  async submitTest() {}
+
+  async takeTest(accessCode: string) {
+    // Retrieve the access token from the test.
+    const { studentId, testId } = await this.db
+      .selectFrom('student_tokens')
+      .where('accessCode', '=', accessCode)
+      .selectAll()
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException('Failed to retrieve details. Is the access token correct?', HttpStatus.NOT_FOUND);
+      });
+
+    // Retrieve the test associated with that access code.
+    const test = await this.db
+      .selectFrom('tests')
+      .leftJoin('questions', 'questions.testId', 'testId')
+      .selectAll()
+      .where('tests.id', '=', testId)
+      .executeTakeFirstOrThrow(() => {
+        return new CustomException('Test not found', HttpStatus.NOT_FOUND);
+      });
+
+    return {
+      message: 'Test retrieved successfully',
+      data: test,
+    };
+  }
+
   async sendTestInvitationMail(req, { students, testId }: SendTestInvitationMailDto) {
     // Get the test
     const test = await this.db
@@ -129,7 +216,6 @@ export class TestService {
         email: x.email,
       })),
     });
-
 
     return {
       message: 'Mail sent to all receipients',
