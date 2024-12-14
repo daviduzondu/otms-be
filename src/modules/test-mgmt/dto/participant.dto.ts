@@ -1,7 +1,8 @@
 import { IsArray, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { OmitType } from '@nestjs/mapped-types';
 
-class Info {
+class AddInfo {
   @IsUUID()
   studentId: string;
 
@@ -12,9 +13,18 @@ class Info {
   testId: string;
 }
 
+class RemoveInfo extends OmitType(AddInfo, ['origin']) {}
+
 export class AddParticipantDto {
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => Info)
-  students: Info[];
+  @Type(() => AddInfo)
+  students: AddInfo[];
+}
+
+export class RemoveParticipantDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RemoveInfo)
+  students: AddInfo[];
 }

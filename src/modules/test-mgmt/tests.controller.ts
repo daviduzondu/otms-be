@@ -6,7 +6,7 @@ import { TestService } from './tests.service';
 import CheckOwnership from '../../decorators/check-ownership.decorator';
 import { OwnerGuard } from '../../guards/owner.guard';
 import { SendTestInvitationMailDto } from './dto/send-test.dto';
-import { AddParticipantDto } from './dto/participant.dto';
+import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('tests')
@@ -41,6 +41,18 @@ export class TestsController {
   @UseGuards(JwtAuthGuard, OwnerGuard)
   async addParticipant(@Body() payload: AddParticipantDto) {
     return await this.testService.addParticipant(payload);
+  }
+
+  @Post(':id/participants/remove')
+  @CheckOwnership({
+    table: 'tests',
+    column: 'id',
+    foreignKey: 'teacherId',
+    pathOnReq: ['params', 'id'],
+  })
+  @UseGuards(JwtAuthGuard, OwnerGuard)
+  async removeParticipant(@Body() payload: RemoveParticipantDto) {
+    return await this.testService.removeParticipant(payload);
   }
 
   @Delete(':id')

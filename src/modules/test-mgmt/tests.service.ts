@@ -9,7 +9,7 @@ import { EmailService } from '../email/email.service';
 import { SendTestInvitationMailDto } from './dto/send-test.dto';
 import path from 'node:path';
 import { ConfigService } from '@nestjs/config';
-import { AddParticipantDto } from './dto/participant.dto';
+import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { customAlphabet } = require('fix-esm').require('nanoid');
 
@@ -77,13 +77,6 @@ export class TestService {
       }
     });
 
-    // // Check if the student is already in the participants
-    // const studentAlreadyAParticipant = await this.db.selectFrom('test_participants').selectAll().where('studentId', '=', addParticipantDto.studentId).where('testId', '=', addParticipantDto.testId).executeTakeFirst();
-    //
-    // if (studentAlreadyAParticipant) {
-    //   throw new CustomException('Student already a participant', HttpStatus.CONFLICT);
-    // }
-
     // Add the student to the participants
     const result = await this.db
       .insertInto('test_participants')
@@ -102,6 +95,47 @@ export class TestService {
     return {
       message: 'Student successfully added to participants',
       data: result,
+    };
+  }
+
+  async removeParticipant(removeParticipantDto: RemoveParticipantDto) {
+    await this.db.transaction().execute(async (trx) => {
+      // First delete query within the transaction
+      await trx
+        .deleteFrom('test_participants')
+        .where(
+          'test_participants.studentId',
+          'in',
+          removeParticipantDto.students.map((x) => x.studentId),
+        )
+        .where(
+          'test_participants.testId',
+          'in',
+          removeParticipantDto.students.map((x) => x.testId),
+        )
+        .execute();
+
+      // Second delete query within the transaction
+      await trx
+        .deleteFrom('student_tokens')
+        .where(
+          'student_tokens.studentId',
+          'in',
+          removeParticipantDto.students.map((x) => x.studentId),
+        )
+        .where(
+          'student_tokens.testId',
+          'in',
+          removeParticipantDto.students.map((x) => x.testId),
+        )
+        .execute();
+
+      // Return the result of the transaction if needed
+      return { success: true };
+    });
+
+    return {
+      message: 'Successfully removed student',
     };
   }
 
