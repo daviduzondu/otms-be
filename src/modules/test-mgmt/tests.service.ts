@@ -67,7 +67,7 @@ export class TestService {
     if (students.length === 0) throw new CustomException('One or more students in the list do not exist', HttpStatus.NOT_FOUND);
 
     // Generate access code for students without them
-    const data = addParticipantDto.students.map((student) => {
+    const data = addParticipantDto.students.map((student) => {``
       const existingStudentWithToken = students.find((x) => x.accessCode && x.studentId === student.studentId);
 
       if (!existingStudentWithToken) {
