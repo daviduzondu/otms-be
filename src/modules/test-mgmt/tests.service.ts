@@ -10,8 +10,9 @@ import { SendTestInvitationMailDto } from './dto/send-test.dto';
 import path from 'node:path';
 import { ConfigService } from '@nestjs/config';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
+import {customAlphabet} from 'nanoid';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { customAlphabet } = require('fix-esm').require('nanoid');
+// const { customAlphabet } = require('fix-esm').require('nanoid');
 
 @Injectable()
 export class TestService {
