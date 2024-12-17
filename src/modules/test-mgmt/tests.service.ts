@@ -10,7 +10,9 @@ import { SendTestInvitationMailDto } from './dto/send-test.dto';
 import path from 'node:path';
 import { ConfigService } from '@nestjs/config';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
-import {customAlphabet} from 'nanoid';
+import { customAlphabet } from 'nanoid';
+import { jsonArrayFrom } from 'kysely/helpers/postgres';
+import _ from 'lodash';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { customAlphabet } = require('fix-esm').require('nanoid');
 
@@ -68,7 +70,8 @@ export class TestService {
     if (students.length === 0) throw new CustomException('One or more students in the list do not exist', HttpStatus.NOT_FOUND);
 
     // Generate access code for students without them
-    const data = addParticipantDto.students.map((student) => {``
+    const data = addParticipantDto.students.map((student) => {
+      ``;
       const existingStudentWithToken = students.find((x) => x.accessCode && x.studentId === student.studentId);
 
       if (!existingStudentWithToken) {
@@ -186,9 +189,10 @@ export class TestService {
   async submitTest() {}
 
   async takeTest(accessCode: string) {
-    // Retrieve the access token from the test.
-    const { studentId, testId } = await this.db
+    // Identify the student based on the access token
+    const { studentId, testId, ...otherInfo } = await this.db
       .selectFrom('student_tokens')
+      .leftJoin('students', 'students.id', 'student_tokens.studentId')
       .where('accessCode', '=', accessCode)
       .selectAll()
       .executeTakeFirstOrThrow(() => {
@@ -198,16 +202,63 @@ export class TestService {
     // Retrieve the test associated with that access code.
     const test = await this.db
       .selectFrom('tests')
-      .leftJoin('questions', 'questions.testId', 'testId')
-      .selectAll()
+      .select(({ eb }) => [
+        'title',
+        'instructions',
+        'teacherId',
+        'passingScore',
+        'durationMin',
+        'randomizeQuestions',
+        jsonArrayFrom(
+          eb
+            .selectFrom('questions')
+            .where('questions.testId', '=', testId)
+            .where((eb) => eb('isDeleted', '=', false).or('isDeleted', '=', null))
+            .selectAll(),
+        ).as('questions'),
+      ])
       .where('tests.id', '=', testId)
       .executeTakeFirstOrThrow(() => {
-        return new CustomException('Test not found', HttpStatus.NOT_FOUND);
+        throw new CustomException('Test not found', HttpStatus.FOUND);
       });
+
+    // Now push the data to the attempts table
+    const existingAttempt = await this.db.selectFrom('test_attempts').where('studentId', '=', studentId).where('testId', '=', testId).selectAll().executeTakeFirst();
+    const startedAt = new Date();
+    const endsAt = new Date(startedAt.getTime() + (test.durationMin + 5) * 60 * 1000);
+    let questions = (() => (test.randomizeQuestions ? _.shuffle(test.questions) : test.questions))();
+
+    if (existingAttempt) {
+      questions = existingAttempt.questions.map((qId) => test.questions.find((x) => x.id === qId));
+    } else {
+      await this.db
+        .insertInto('test_attempts')
+        .values({
+          testId,
+          questions: questions.map((q) => q.id),
+          studentId,
+          startedAt,
+          endsAt,
+        })
+        .onConflict((oc) => oc.columns(['testId', 'studentId']).doNothing())
+        .execute();
+    }
 
     return {
       message: 'Test retrieved successfully',
-      data: test,
+      data: {
+        ...test,
+        randomizeQuestions: undefined,
+        questions: questions.map((q) => ({
+          ...q,
+          correctAnswer: undefined,
+          isDeleted: undefined,
+          createdAt: undefined,
+          updatedAt: undefined,
+          index: undefined
+        })),
+        startedAt,
+      },
     };
   }
 
