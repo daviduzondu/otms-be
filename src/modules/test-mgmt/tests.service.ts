@@ -186,6 +186,12 @@ export class TestService {
     };
   }
 
+  async recordNavigationTime(){
+    // await this.db.insertInto('student_grading').values()
+  }
+
+  async submitAnswer() {}
+
   async submitTest() {}
 
   async takeTest(accessCode: string) {
@@ -208,6 +214,7 @@ export class TestService {
         'teacherId',
         'passingScore',
         'durationMin',
+        'id',
         'randomizeQuestions',
         jsonArrayFrom(
           eb

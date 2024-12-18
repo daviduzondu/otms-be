@@ -1,15 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectKysesly } from '../kysesly/decorators/inject-repository';
 import { Database } from '../kysesly/database';
 import { CreateQuestionDto } from './dto/create-question.dto';
-import { TestService } from '../test-mgmt/tests.service';
 import { UpdateQuestionOrderDto } from './dto/update-question-index.dto';
+import { CustomException } from 'src/exceptions/custom.exception';
 
 @Injectable()
 export class QuestionsService {
-  constructor(
-    @InjectKysesly() private db: Database,
-  ) {}
+  constructor(@InjectKysesly() private db: Database) {}
 
   async createQuestion(payload: CreateQuestionDto) {
     // this.testService.getTestRecordByUser(payload.testId, req).catch(() => {
@@ -18,6 +16,11 @@ export class QuestionsService {
     //     HttpStatus.NOT_FOUND,
     //   );
     // });
+    const existingAttempt = await this.db.selectFrom('test_attempts').selectAll().where('testId', '=', payload.testId).executeTakeFirst();
+    if (existingAttempt) {
+      throw new CustomException('You cannot add a new question because one or more students have attempted this test', HttpStatus.CONFLICT);
+    }
+
     const { totalQuestions } = await this.db
       .selectFrom('questions')
       .where('testId', '=', payload.testId)
@@ -42,6 +45,11 @@ export class QuestionsService {
   }
 
   async editQuestion(payload: CreateQuestionDto, questionId: string) {
+    const existingAttempt = await this.db.selectFrom('test_attempts').selectAll().where('testId', '=', payload.testId).executeTakeFirst();
+    if (existingAttempt) {
+      throw new CustomException('You cannot edit this question because one or more students have attempted this test', HttpStatus.CONFLICT);
+    }
+
     const question = await this.db
       .updateTable('questions')
       .set(payload as any)
@@ -56,11 +64,18 @@ export class QuestionsService {
   }
 
   async deleteQuestion(questionId: string) {
-    await this.db
-      .updateTable('questions')
-      .set({ isDeleted: true })
-      .where('id', '=', questionId)
-      .execute();
+    const existingAttempt = await this.db
+      .selectFrom('test_attempts')
+      .innerJoin('questions', 'questions.testId', 'test_attempts.testId')
+      .selectAll()
+      .where('questions.id', '=', questionId) // Match the questionId
+      .executeTakeFirst();
+
+    if (existingAttempt) {
+      throw new CustomException('You cannot delete this question because one or more students have attempted this test', HttpStatus.CONFLICT);
+    }
+
+    await this.db.updateTable('questions').set({ isDeleted: true }).where('id', '=', questionId).execute();
 
     return {
       message: 'Question deleted successfully',
@@ -68,17 +83,17 @@ export class QuestionsService {
   }
 
   async updateQuestionOrder(updateQuestionsDto: UpdateQuestionOrderDto) {
+    const existingAttempt = await this.db.selectFrom('test_attempts').selectAll().where('testId', '=', updateQuestionsDto.questions[0].testId).executeTakeFirst();
+    if (existingAttempt) {
+      throw new CustomException('You cannot make any changes because one or more students have attempted this test', HttpStatus.CONFLICT);
+    }
+
     const { questions } = updateQuestionsDto;
     // Loop through the questions array and update each question's index
     for (const question of questions) {
       const { id, index, testId } = question;
 
-      await this.db
-        .updateTable('questions')
-        .set({ index })
-        .where('testId', '=', testId)
-        .where('id', '=', id)
-        .execute();
+      await this.db.updateTable('questions').set({ index }).where('testId', '=', testId).where('id', '=', id).execute();
     }
 
     return {

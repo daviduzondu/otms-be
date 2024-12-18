@@ -173,15 +173,16 @@ model test_participants {
 }
 
 model student_grading {
-  id         String   @id @default(dbgenerated("gen_random_uuid()"))
-  studentId  String
-  questionId String
-  testId     String
-  isTouched  Boolean  @default(false)
-  point      Int      @default(0)
-  isCorrect  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now())
+  id             String    @id @default(dbgenerated("gen_random_uuid()"))
+  studentId      String
+  questionId     String
+  testId         String
+  isTouched      Boolean   @default(false)
+  point          Int       @default(0)
+  isCorrect      Boolean   @default(false)
+  navigationTime DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now())
 
   student  students  @relation(fields: [studentId], references: [id])
   question questions @relation(fields: [questionId], references: [id])

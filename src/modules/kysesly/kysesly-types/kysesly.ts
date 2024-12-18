@@ -55,6 +55,7 @@ export type student_grading = {
     isTouched: Generated<boolean>;
     point: Generated<number>;
     isCorrect: Generated<boolean>;
+    navigationTime: Timestamp | null;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
