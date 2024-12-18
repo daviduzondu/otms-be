@@ -35,7 +35,7 @@ export class EmailService {
     }
     return html;
   }
-
+  
   async sendEmail(payload: { to: Array<{ email: string; name: string }>; context: any; subject: string; templateName: string }) {
     const template = fs.readFileSync(path.join(process.cwd(), 'src', 'modules', 'email', `/templates/${payload.templateName}.mjml`), { encoding: 'utf8' });
 

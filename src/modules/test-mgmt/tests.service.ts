@@ -12,6 +12,8 @@ import { ConfigService } from '@nestjs/config';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
 import { customAlphabet } from 'nanoid';
 import { jsonArrayFrom } from 'kysely/helpers/postgres';
+import { addMinutes, isWithinInterval } from 'date-fns';
+import { QuestionType } from '../kysesly/kysesly-types/enums';
 import _ from 'lodash';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { customAlphabet } = require('fix-esm').require('nanoid');
@@ -59,7 +61,7 @@ export class TestService {
     let students = await this.db
       .selectFrom('students')
       .leftJoin('student_tokens', 'student_tokens.studentId', 'students.id')
-      .select(['students.id as studentId', 'student_tokens.accessCode as accessCode'])
+      .select(['students.id as studentId', 'student_tokens.accessCode as accessCode', 'student_tokens.testId as testId'])
       .where(
         'students.id',
         'in',
@@ -71,8 +73,7 @@ export class TestService {
 
     // Generate access code for students without them
     const data = addParticipantDto.students.map((student) => {
-      ``;
-      const existingStudentWithToken = students.find((x) => x.accessCode && x.studentId === student.studentId);
+      const existingStudentWithToken = students.find((x) => x.accessCode && x.studentId === student.studentId && x.testId === student.testId);
 
       if (!existingStudentWithToken) {
         return { ...student, origin: undefined, accessCode: this.generateAccessCode() };
@@ -186,17 +187,103 @@ export class TestService {
     };
   }
 
-  async recordNavigationTime(){
-    // await this.db.insertInto('student_grading').values()
+  async fetchQuestion(testId: string, questionId: string, studentId: string) {
+    const data = await this.db.transaction().execute(async (trx) => {
+      const question = await trx
+        .selectFrom('questions')
+        .where('questions.id', '=', questionId)
+        .where('testId', '=', testId)
+        .select(['body', 'mediaId', 'options', 'points', 'timeLimit'])
+        .executeTakeFirstOrThrow(() => {
+          throw new CustomException('Question not found!');
+        });
+
+      await trx
+        .insertInto('student_grading')
+        .values({
+          startedAt: new Date(),
+          studentId,
+          testId,
+          questionId,
+        })
+        .onConflict((oc) => oc.columns(['questionId', 'testId', 'studentId', 'startedAt']).doNothing())
+        .execute();
+
+      return question;
+    });
+
+    return {
+      message: 'Question retrieved successfully',
+      data,
+    };
   }
 
-  async submitAnswer() {}
+  async submitAnswer(testId: string, studentId: string, questionId: string, answer: string) {
+    // Retrieve the test
+    const test = await this.db
+      .selectFrom('test_attempts')
+      .leftJoin('tests', 'tests.id', 'test_attempts.testId')
+      .selectAll()
+      .where('test_attempts.testId', '=', testId)
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException('Attempt not found', HttpStatus.NOT_FOUND);
+      });
+
+    // Retrieve question
+    const question = await this.db
+      .selectFrom('questions')
+      .selectAll()
+      .where('questions.id', '=', questionId)
+      .where('testId', '=', testId)
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException('Question not found', HttpStatus.NOT_FOUND);
+      });
+
+    // Retrieve start time for timed questions
+    let submission = await this.db.selectFrom('student_grading').selectAll().where('questionId', '=', questionId).where('testId', '=', testId).executeTakeFirst();
+
+    if (!submission?.startedAt) throw new CustomException('One or more parameters are missing', HttpStatus.BAD_REQUEST);
+
+    const payload = {
+      startedAt: submission?.startedAt,
+      isWithinTime: submission && question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) && this.isWithinTime(addMinutes(test.startedAt, test.durationMin), question.timeLimit + 2) : this.isWithinTime(addMinutes(test.startedAt, 2), test.durationMin),
+      isTouched: true,
+      isCorrect: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) ? String(answer) === question.correctAnswer : undefined,
+      point: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) && String(answer) === question?.correctAnswer ? question.points : undefined,
+    };
+
+    // Make a submission
+    const result = await this.db
+      .insertInto('student_grading')
+      .values({
+        testId,
+        questionId,
+        answer,
+        studentId,
+        ...payload,
+      })
+      .onConflict((oc) =>
+        oc.columns(['testId', 'startedAt', 'questionId', 'studentId']).doUpdateSet({
+          ...Object.assign(payload, {
+            isCorrect: payload.isWithinTime ? true : submission.isCorrect,
+            point: payload.isWithinTime ? payload.point : submission.point,
+          }),
+        }),
+      )
+      .returningAll()
+      .execute();
+
+    return {
+      message: payload.isWithinTime ? 'Answer submitted successfully' : 'Submitted, but late submission.',
+      result,
+    };
+  }
 
   async submitTest() {}
 
   async takeTest(accessCode: string) {
     // Identify the student based on the access token
-    const { studentId, testId, ...otherInfo } = await this.db
+    const { studentId, testId } = await this.db
       .selectFrom('student_tokens')
       .leftJoin('students', 'students.id', 'student_tokens.studentId')
       .where('accessCode', '=', accessCode)
@@ -231,12 +318,12 @@ export class TestService {
 
     // Now push the data to the attempts table
     const existingAttempt = await this.db.selectFrom('test_attempts').where('studentId', '=', studentId).where('testId', '=', testId).selectAll().executeTakeFirst();
-    const startedAt = new Date();
+    const startedAt = existingAttempt?.startedAt || new Date();
     const endsAt = new Date(startedAt.getTime() + (test.durationMin + 5) * 60 * 1000);
     let questions = (() => (test.randomizeQuestions ? _.shuffle(test.questions) : test.questions))();
 
     if (existingAttempt) {
-      questions = existingAttempt.questions.map((qId) => test.questions.find((x) => x.id === qId));
+      questions = existingAttempt.questions;
     } else {
       await this.db
         .insertInto('test_attempts')
@@ -256,14 +343,8 @@ export class TestService {
       data: {
         ...test,
         randomizeQuestions: undefined,
-        questions: questions.map((q) => ({
-          ...q,
-          correctAnswer: undefined,
-          isDeleted: undefined,
-          createdAt: undefined,
-          updatedAt: undefined,
-          index: undefined
-        })),
+        questions: undefined,
+        question: questions,
         startedAt,
       },
     };
@@ -280,7 +361,7 @@ export class TestService {
       });
 
     // Get the students
-    const results = await this.db.selectFrom('students').selectAll().where('id', 'in', students).execute();
+    const results = await this.db.selectFrom('students').leftJoin('student_tokens', 'student_tokens.studentId', 'students.id').selectAll().where('students.id', 'in', students).where('testId', '=', testId).execute();
     if (results.length === 0) {
       throw new CustomException('Some students in this list do not exist', HttpStatus.NOT_FOUND);
     }
@@ -294,18 +375,18 @@ export class TestService {
         throw new CustomException('Teacher not found!', HttpStatus.NOT_FOUND);
       });
 
-    const testUrl = new URL(path.join(new ConfigService().get('FRONTEND_BASE_URL'), 't', `${test.code}?token=somethingrandom`));
+    console.log(students, results);
 
     await this.emailService.sendEmail({
       to: results.map((x) => ({ email: x.email, name: `${x.firstName} ${x.lastName}` })),
       subject: 'You have been invited to take a test!',
       templateName: 'test-invitation',
       context: results.map((x) => ({
-        testUrl,
+        testUrl: new URL(path.join(new ConfigService().get('FRONTEND_BASE_URL'), 't', `${test.code}?token=${x.accessCode}`)),
         studentName: `${x.firstName} ${x.lastName}`,
         teacherName: `${teacher.firstName} ${teacher.lastName}`,
         testName: test.title,
-        fallbackUrl: testUrl,
+        fallbackUrl: new URL(path.join(new ConfigService().get('FRONTEND_BASE_URL'), 't', `${test.code}?token=${x.accessCode}`)),
         email: x.email,
       })),
     });
@@ -313,5 +394,11 @@ export class TestService {
     return {
       message: 'Mail sent to all receipients',
     };
+  }
+
+  private isWithinTime(startedAt: Date, timeLimit: number) {
+    const now = new Date();
+    const endTime = addMinutes(startedAt, timeLimit);
+    return isWithinInterval(now, { start: startedAt, end: endTime });
   }
 }

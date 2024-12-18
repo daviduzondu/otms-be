@@ -7,6 +7,7 @@ import CheckOwnership from '../../decorators/check-ownership.decorator';
 import { OwnerGuard } from '../../guards/owner.guard';
 import { SendTestInvitationMailDto } from './dto/send-test.dto';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
+import { AccessTokenGuard } from '../../guards/access-token.guard';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('tests')
@@ -61,9 +62,36 @@ export class TestsController {
   @Put(':id')
   async editTest() {}
 
+  @Get(':id/question/:questionId')
+  @UseGuards(AccessTokenGuard)
+  async fetchQuestion(
+    @Param('id', ParseUUIDPipe) testId: string,
+    @Param('questionId', ParseUUIDPipe) questionId: string,
+    @Req()
+    req: Request & {
+      student: { id: string };
+    },
+  ) {
+    return await this.testService.fetchQuestion(testId, questionId, req.student.id);
+  }
+
   @Get('take/:accessCode')
   async takeTest(@Param('accessCode') accessCode: string) {
     return await this.testService.takeTest(accessCode);
+  }
+
+  @Post(':id/question/:questionId/submit')
+  @UseGuards(AccessTokenGuard)
+  async submitAnswer(
+    @Param('id', ParseUUIDPipe) testId: string,
+    @Param('questionId', ParseUUIDPipe) questionId: string,
+    @Body() payload: { answer: string },
+    @Req()
+    req: Request & {
+      student: { id: string };
+    },
+  ) {
+    return await this.testService.submitAnswer(testId, req.student.id, questionId, payload.answer);
   }
 
   @UseGuards(JwtAuthGuard)

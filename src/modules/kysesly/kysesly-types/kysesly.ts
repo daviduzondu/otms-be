@@ -52,10 +52,12 @@ export type student_grading = {
     studentId: string;
     questionId: string;
     testId: string;
+    answer: string | null;
     isTouched: Generated<boolean>;
-    point: Generated<number>;
+    point: number | null;
+    isWithinTime: boolean | null;
     isCorrect: Generated<boolean>;
-    navigationTime: Timestamp | null;
+    startedAt: Timestamp | null;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
