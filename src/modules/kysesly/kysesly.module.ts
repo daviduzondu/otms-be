@@ -16,7 +16,7 @@ import { DB } from './kysesly-types/kysesly';
             connectionString: new ConfigService().get('DATABASE_URL'),
           }),
         });
-        return new Kysely<DB>({ dialect, log: ['query', 'error'] });
+        return new Kysely<DB>({ dialect, log: ['error'] });
       },
     },
   ],

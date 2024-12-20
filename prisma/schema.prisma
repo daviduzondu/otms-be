@@ -64,6 +64,7 @@ model questions {
   media           media?            @relation(fields: [mediaId], references: [id])
   tests           tests             @relation(fields: [testId], references: [id])
   student_grading student_grading[]
+  test_attempts   test_attempts[]
 }
 
 model student_class {
@@ -142,18 +143,21 @@ model tests {
 }
 
 model test_attempts {
-  id        String        @id @default(dbgenerated("gen_random_uuid()"))
-  testId    String
-  studentId String
-  questions String[]
-  startedAt DateTime
-  endsAt    DateTime
-  status    AttemptStatus @default(unsubmitted)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @default(now())
+  id                String        @id @default(dbgenerated("gen_random_uuid()"))
+  testId            String
+  studentId         String
+  questions         String[]
+  startedAt         DateTime
+  submittedAt       DateTime?
+  endsAt            DateTime
+  currentQuestionId String
+  status            AttemptStatus @default(unsubmitted)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @default(now())
 
-  tests    tests    @relation(fields: [testId], references: [id])
-  students students @relation(fields: [studentId], references: [id])
+  tests                   tests     @relation(fields: [testId], references: [id])
+  students                students  @relation(fields: [studentId], references: [id])
+  currentQuestionRelation questions @relation(fields: [currentQuestionId], references: [id])
 
   @@unique([testId, studentId])
 }
@@ -181,7 +185,7 @@ model student_grading {
   isTouched    Boolean   @default(false)
   point        Int?
   isWithinTime Boolean?
-  isCorrect    Boolean   @default(false)
+  isCorrect    Boolean?
   startedAt    DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @default(now())
@@ -190,7 +194,7 @@ model student_grading {
   question questions @relation(fields: [questionId], references: [id])
   test     tests     @relation(fields: [testId], references: [id])
 
-  @@unique([questionId, studentId, testId, startedAt])
+  @@unique([questionId, studentId, testId])
 }
 
 model student_tokens {

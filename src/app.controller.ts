@@ -14,6 +14,11 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  @Get('server-time')
+  getServerTime(){
+    return new Date().toISOString();
+  }
+
   // @Get('send-mail')
   // async sendMail() {
   //   return await this.emailService.sendEmail({

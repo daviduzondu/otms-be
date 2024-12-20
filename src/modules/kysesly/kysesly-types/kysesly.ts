@@ -56,7 +56,7 @@ export type student_grading = {
     isTouched: Generated<boolean>;
     point: number | null;
     isWithinTime: boolean | null;
-    isCorrect: Generated<boolean>;
+    isCorrect: boolean | null;
     startedAt: Timestamp | null;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
@@ -102,7 +102,9 @@ export type test_attempts = {
     studentId: string;
     questions: string[];
     startedAt: Timestamp;
+    submittedAt: Timestamp | null;
     endsAt: Timestamp;
+    currentQuestionId: string;
     status: Generated<AttemptStatus>;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;

@@ -105,7 +105,34 @@ export class TestService {
 
   async removeParticipant(removeParticipantDto: RemoveParticipantDto) {
     await this.db.transaction().execute(async (trx) => {
-      // First delete query within the transaction
+      const existingAttempt = await trx
+        .selectFrom('test_attempts')
+        .leftJoin('students', 'test_attempts.studentId', 'students.id')
+        .selectAll()
+        .where(
+          'test_attempts.studentId',
+          'in',
+          removeParticipantDto.students.map((x) => x.studentId),
+        )
+        .where(
+          'test_attempts.testId',
+          'in',
+          removeParticipantDto.students.map((x) => x.testId),
+        )
+        .execute();
+
+      const message = `You cannot remove ${existingAttempt
+        .map((s, index) => {
+          const isLast = index === existingAttempt.length - 1;
+          const isSecondLast = index === existingAttempt.length - 2;
+          const separator = isLast ? '' : isSecondLast ? ' and ' : ', ';
+          return `${s.firstName} ${s.lastName}${separator}`;
+        })
+        .join('')} from this test. Because they have already taken it.`;
+
+      console.log(existingAttempt);
+      if (existingAttempt.length > 0) throw new CustomException(message, HttpStatus.CONFLICT);
+
       await trx
         .deleteFrom('test_participants')
         .where(
@@ -120,7 +147,6 @@ export class TestService {
         )
         .execute();
 
-      // Second delete query within the transaction
       await trx
         .deleteFrom('student_tokens')
         .where(
@@ -130,6 +156,20 @@ export class TestService {
         )
         .where(
           'student_tokens.testId',
+          'in',
+          removeParticipantDto.students.map((x) => x.testId),
+        )
+        .execute();
+
+      await trx
+        .deleteFrom('student_grading')
+        .where(
+          'student_grading.studentId',
+          'in',
+          removeParticipantDto.students.map((x) => x.studentId),
+        )
+        .where(
+          'student_grading.testId',
           'in',
           removeParticipantDto.students.map((x) => x.testId),
         )
@@ -192,13 +232,16 @@ export class TestService {
       const question = await trx
         .selectFrom('questions')
         .where('questions.id', '=', questionId)
+        .where((eb) => eb('isDeleted', '=', false).or('isDeleted', '=', null))
         .where('testId', '=', testId)
-        .select(['body', 'mediaId', 'options', 'points', 'timeLimit'])
+        .select(['body', 'mediaId', 'options', 'points', 'timeLimit', 'type', 'id'])
         .executeTakeFirstOrThrow(() => {
           throw new CustomException('Question not found!');
         });
 
-      await trx
+      await trx.updateTable('test_attempts').set('currentQuestionId', questionId).executeTakeFirst();
+
+      const { startedAt } = await trx
         .insertInto('student_grading')
         .values({
           startedAt: new Date(),
@@ -206,10 +249,20 @@ export class TestService {
           testId,
           questionId,
         })
-        .onConflict((oc) => oc.columns(['questionId', 'testId', 'studentId', 'startedAt']).doNothing())
-        .execute();
+        .onConflict((oc) =>
+          oc.columns(['questionId', 'testId', 'studentId']).doUpdateSet((eb) => ({
+            studentId: eb.ref('excluded.studentId'),
+          })),
+        )
+        .returningAll()
+        .executeTakeFirst();
 
-      return question;
+      return {
+        ...question,
+        startedAt,
+        endAt: addMinutes(startedAt, question.timeLimit),
+        serverTime: new Date().toISOString(),
+      };
     });
 
     return {
@@ -244,13 +297,17 @@ export class TestService {
 
     if (!submission?.startedAt) throw new CustomException('One or more parameters are missing', HttpStatus.BAD_REQUEST);
 
+    console.log(submission.startedAt);
+
     const payload = {
       startedAt: submission?.startedAt,
-      isWithinTime: submission && question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) && this.isWithinTime(addMinutes(test.startedAt, test.durationMin), question.timeLimit + 2) : this.isWithinTime(addMinutes(test.startedAt, 2), test.durationMin),
+      isWithinTime: submission.isWithinTime ? (question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) && this.isWithinTime(addMinutes(test.startedAt, 2), test.durationMin) : this.isWithinTime(addMinutes(test.startedAt, 2), test.durationMin)) : false,
       isTouched: true,
-      isCorrect: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) ? String(answer) === question.correctAnswer : undefined,
-      point: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) && String(answer) === question?.correctAnswer ? question.points : undefined,
+      isCorrect: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) ? String(answer) === question.correctAnswer : null,
+      point: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) && String(answer) === question?.correctAnswer ? question.points : null,
     };
+
+    console.log({ ...payload, answer });
 
     // Make a submission
     const result = await this.db
@@ -263,9 +320,10 @@ export class TestService {
         ...payload,
       })
       .onConflict((oc) =>
-        oc.columns(['testId', 'startedAt', 'questionId', 'studentId']).doUpdateSet({
+        oc.columns(['testId', 'questionId', 'studentId']).doUpdateSet({
           ...Object.assign(payload, {
-            isCorrect: payload.isWithinTime ? true : submission.isCorrect,
+            answer: payload.isWithinTime ? answer : submission.answer,
+            isCorrect: payload.isWithinTime ? payload.isCorrect : submission.isCorrect,
             point: payload.isWithinTime ? payload.point : submission.point,
           }),
         }),
@@ -275,11 +333,25 @@ export class TestService {
 
     return {
       message: payload.isWithinTime ? 'Answer submitted successfully' : 'Submitted, but late submission.',
-      result,
+      data: Object.assign(result, {serverTime: new Date()})[0],
     };
   }
 
-  async submitTest() {}
+  async submitTest(testId: string, studentId: string) {
+    // Retrieve the test
+    const test = await this.db
+      .selectFrom('test_attempts')
+      .leftJoin('tests', 'tests.id', 'test_attempts.testId')
+      .selectAll()
+      .where('test_attempts.testId', '=', testId)
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException('Attempt not found', HttpStatus.NOT_FOUND);
+      });
+
+    await this.db.updateTable('test_attempts').set({ 'status':'submitted', submittedAt: new Date() }).where('testId', '=', testId).where('studentId', '=', studentId).execute();
+
+    return { message: 'Submission successful' };
+  }
 
   async takeTest(accessCode: string) {
     // Identify the student based on the access token
@@ -321,21 +393,26 @@ export class TestService {
     const startedAt = existingAttempt?.startedAt || new Date();
     const endsAt = new Date(startedAt.getTime() + (test.durationMin + 5) * 60 * 1000);
     let questions = (() => (test.randomizeQuestions ? _.shuffle(test.questions) : test.questions))();
+    let currentQuestionId: string = existingAttempt?.currentQuestionId || questions[0].id;
 
     if (existingAttempt) {
       questions = existingAttempt.questions;
     } else {
-      await this.db
+      let result = await this.db
         .insertInto('test_attempts')
         .values({
           testId,
           questions: questions.map((q) => q.id),
           studentId,
           startedAt,
+          currentQuestionId: currentQuestionId,
           endsAt,
         })
+        .returning('questions')
         .onConflict((oc) => oc.columns(['testId', 'studentId']).doNothing())
-        .execute();
+        .executeTakeFirst();
+
+      questions = result.questions;
     }
 
     return {
@@ -343,9 +420,10 @@ export class TestService {
       data: {
         ...test,
         randomizeQuestions: undefined,
-        questions: undefined,
-        question: questions,
+        questions,
         startedAt,
+        currentQuestionId: currentQuestionId,
+        serverTime: new Date().toISOString(),
       },
     };
   }

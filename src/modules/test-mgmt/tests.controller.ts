@@ -75,6 +75,19 @@ export class TestsController {
     return await this.testService.fetchQuestion(testId, questionId, req.student.id);
   }
 
+  @Get(':id/submit')
+  @UseGuards(AccessTokenGuard)
+  async submitQuestion(
+    @Param('id', ParseUUIDPipe) testId: string,
+    @Param('questionId', ParseUUIDPipe) questionId: string,
+    @Req()
+    req: Request & {
+      student: { id: string };
+    },
+  ) {
+    return await this.testService.submitTest(testId, req.student.id);
+  }
+
   @Get('take/:accessCode')
   async takeTest(@Param('accessCode') accessCode: string) {
     return await this.testService.takeTest(accessCode);
@@ -99,6 +112,8 @@ export class TestsController {
   async createTest(@Body() createTestDto: CreateTestDto, @Req() req: Request) {
     return await this.testService.createNewTest(createTestDto, req);
   }
+
+
 
   @UseGuards(JwtAuthGuard)
   @Post('send-test')
