@@ -79,7 +79,6 @@ export class TestsController {
   @UseGuards(AccessTokenGuard)
   async submitQuestion(
     @Param('id', ParseUUIDPipe) testId: string,
-    @Param('questionId', ParseUUIDPipe) questionId: string,
     @Req()
     req: Request & {
       student: { id: string };

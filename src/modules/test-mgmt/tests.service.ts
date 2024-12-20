@@ -282,6 +282,8 @@ export class TestService {
         throw new CustomException('Attempt not found', HttpStatus.NOT_FOUND);
       });
 
+    if (test.status === 'submitted') throw new CustomException("You've already made a submission", HttpStatus.METHOD_NOT_ALLOWED);
+
     // Retrieve question
     const question = await this.db
       .selectFrom('questions')
@@ -297,17 +299,15 @@ export class TestService {
 
     if (!submission?.startedAt) throw new CustomException('One or more parameters are missing', HttpStatus.BAD_REQUEST);
 
-    console.log(submission.startedAt);
-
     const payload = {
       startedAt: submission?.startedAt,
-      isWithinTime: submission.isWithinTime ? (question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) && this.isWithinTime(addMinutes(test.startedAt, 2), test.durationMin) : this.isWithinTime(addMinutes(test.startedAt, 2), test.durationMin)) : false,
+      isWithinTime: question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) : this.isWithinTime(addMinutes(test.startedAt, 2), test.durationMin),
       isTouched: true,
       isCorrect: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) ? String(answer) === question.correctAnswer : null,
       point: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) && String(answer) === question?.correctAnswer ? question.points : null,
     };
 
-    console.log({ ...payload, answer });
+    // console.log({ ...payload, answer });
 
     // Make a submission
     const result = await this.db
@@ -333,7 +333,7 @@ export class TestService {
 
     return {
       message: payload.isWithinTime ? 'Answer submitted successfully' : 'Submitted, but late submission.',
-      data: Object.assign(result, {serverTime: new Date()})[0],
+      data: Object.assign(result, { serverTime: new Date() })[0],
     };
   }
 
@@ -348,7 +348,15 @@ export class TestService {
         throw new CustomException('Attempt not found', HttpStatus.NOT_FOUND);
       });
 
-    await this.db.updateTable('test_attempts').set({ 'status':'submitted', submittedAt: new Date() }).where('testId', '=', testId).where('studentId', '=', studentId).execute();
+    await this.db
+      .updateTable('test_attempts')
+      .set({
+        status: 'submitted',
+        submittedAt: new Date(),
+      })
+      .where('testId', '=', testId)
+      .where('studentId', '=', studentId)
+      .execute();
 
     return { message: 'Submission successful' };
   }
@@ -422,6 +430,7 @@ export class TestService {
         randomizeQuestions: undefined,
         questions,
         startedAt,
+        status: existingAttempt.status || 'unsubmitted',
         currentQuestionId: currentQuestionId,
         serverTime: new Date().toISOString(),
       },
@@ -452,8 +461,6 @@ export class TestService {
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('Teacher not found!', HttpStatus.NOT_FOUND);
       });
-
-    console.log(students, results);
 
     await this.emailService.sendEmail({
       to: results.map((x) => ({ email: x.email, name: `${x.firstName} ${x.lastName}` })),
