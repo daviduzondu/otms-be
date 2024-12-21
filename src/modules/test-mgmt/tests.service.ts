@@ -273,7 +273,7 @@ export class TestService {
 
   async submitAnswer(testId: string, studentId: string, questionId: string, answer: string) {
     // Retrieve the test
-    const test = await this.db
+    const testAttempt = await this.db
       .selectFrom('test_attempts')
       .leftJoin('tests', 'tests.id', 'test_attempts.testId')
       .selectAll()
@@ -282,7 +282,7 @@ export class TestService {
         throw new CustomException('Attempt not found', HttpStatus.NOT_FOUND);
       });
 
-    if (test.status === 'submitted') throw new CustomException("You've already made a submission", HttpStatus.METHOD_NOT_ALLOWED);
+    if (testAttempt.status === 'submitted') throw new CustomException("You've already made a submission", HttpStatus.METHOD_NOT_ALLOWED);
 
     // Retrieve question
     const question = await this.db
@@ -301,7 +301,7 @@ export class TestService {
 
     const payload = {
       startedAt: submission?.startedAt,
-      isWithinTime: question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) : this.isWithinTime(addMinutes(test.startedAt, 2), test.durationMin),
+      isWithinTime: question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) : this.isWithinTime(testAttempt.startedAt, testAttempt.durationMin + 2),
       isTouched: true,
       isCorrect: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) ? String(answer) === question.correctAnswer : null,
       point: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) && String(answer) === question?.correctAnswer ? question.points : null,
@@ -329,11 +329,12 @@ export class TestService {
         }),
       )
       .returningAll()
-      .execute();
+      .executeTakeFirst();
 
     return {
       message: payload.isWithinTime ? 'Answer submitted successfully' : 'Submitted, but late submission.',
-      data: Object.assign(result, { serverTime: new Date() })[0],
+      data: {...result,serverTime: new Date().toISOString() },
+      // serverTime: new Date().toISOString()
     };
   }
 
@@ -358,7 +359,7 @@ export class TestService {
       .where('studentId', '=', studentId)
       .execute();
 
-    return { message: 'Submission successful' };
+    return { message: 'Submission successful', serverTime: new Date().toISOString() };
   }
 
   async takeTest(accessCode: string) {
@@ -430,7 +431,7 @@ export class TestService {
         randomizeQuestions: undefined,
         questions,
         startedAt,
-        status: existingAttempt.status || 'unsubmitted',
+        status: existingAttempt?.status || 'unsubmitted',
         currentQuestionId: currentQuestionId,
         serverTime: new Date().toISOString(),
       },
@@ -484,6 +485,7 @@ export class TestService {
   private isWithinTime(startedAt: Date, timeLimit: number) {
     const now = new Date();
     const endTime = addMinutes(startedAt, timeLimit);
+    console.log(isWithinInterval(now, { start: startedAt, end: endTime }))
     return isWithinInterval(now, { start: startedAt, end: endTime });
   }
 }
