@@ -130,7 +130,7 @@ model tests {
   passingScore        Int?                @default(70)
   provideExplanations Boolean?            @default(false)
   randomizeQuestions  Boolean?            @default(false)
-  requireFullScreen   Boolean?            @default(false)
+  requireFullScreen   Boolean?            @default(true)
   showCorrectAnswers  Boolean?            @default(false)
   teacherId           String
   questions           questions[]

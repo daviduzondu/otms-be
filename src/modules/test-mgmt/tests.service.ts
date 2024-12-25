@@ -11,10 +11,11 @@ import path from 'node:path';
 import { ConfigService } from '@nestjs/config';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
 import { customAlphabet } from 'nanoid';
-import { jsonArrayFrom } from 'kysely/helpers/postgres';
+import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/postgres';
 import { addMinutes, isWithinInterval } from 'date-fns';
 import { QuestionType } from '../kysesly/kysesly-types/enums';
 import _ from 'lodash';
+import * as test from 'node:test';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { customAlphabet } = require('fix-esm').require('nanoid');
 
@@ -245,6 +246,7 @@ export class TestService {
         .insertInto('student_grading')
         .values({
           startedAt: new Date(),
+          isTouched: true,
           studentId,
           testId,
           questionId,
@@ -302,7 +304,6 @@ export class TestService {
     const payload = {
       startedAt: submission?.startedAt,
       isWithinTime: question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) : this.isWithinTime(testAttempt.startedAt, testAttempt.durationMin + 2),
-      isTouched: true,
       isCorrect: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) ? String(answer) === question.correctAnswer : null,
       point: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) && String(answer) === question?.correctAnswer ? question.points : null,
     };
@@ -480,6 +481,53 @@ export class TestService {
     return {
       message: 'Mail sent to all receipients',
     };
+  }
+
+  async getResponses(testId: string){
+    const betterResponses = await this.db
+      .selectFrom('students')
+      .innerJoin('test_participants', 'test_participants.studentId', 'students.id')
+      .selectAll()
+      .select((eb) => [
+        jsonArrayFrom(
+          eb
+            .selectFrom('questions')
+            .leftJoin('student_grading', (join) =>
+              join
+                .onRef('student_grading.questionId', '=', 'questions.id')
+                .onRef('student_grading.studentId', '=', 'test_participants.studentId')
+                .onRef('student_grading.testId', '=', 'test_participants.testId')
+            )
+            .where('questions.testId', '=', testId)
+            .where((eb) => {
+              return eb('questions.isDeleted', '=', false).or('questions.isDeleted', '=', null);
+            })
+            .select([
+              'questions.id',
+              'questions.body',
+              'questions.options',
+              'questions.correctAnswer',
+              'student_grading.startedAt',
+              'student_grading.isTouched',
+              'questions.index',
+              'student_grading.answer',
+              'student_grading.point',
+              'student_grading.isCorrect',
+              'student_grading.isWithinTime',
+            ])
+        ).as('answers')
+      ])
+      .where('test_participants.testId', '=', testId)
+      .execute();
+
+    const responses = await this.db.selectFrom('questions').leftJoin('student_grading', 'student_grading.questionId', 'questions.id').where('questions.testId', '=', testId).where((eb) => {
+      return eb('isDeleted', '=', false).or('isDeleted', '=', null);
+    }).selectAll().select((eb)=>[jsonObjectFrom(eb.selectFrom('students').whereRef('students.id', '=', 'student_grading.studentId').selectAll()).as('studentInfo')]).execute();
+
+    return {
+      message: `Submissions for test: ${testId}`,
+      data: betterResponses
+    }
   }
 
   private isWithinTime(startedAt: Date, timeLimit: number) {

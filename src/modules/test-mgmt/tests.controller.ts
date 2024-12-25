@@ -113,6 +113,10 @@ export class TestsController {
   }
 
 
+  @Get(':id/responses')
+  async getResponses(@Param('id', ParseUUIDPipe) testId: string){
+    return await this.testService.getResponses(testId);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post('send-test')
