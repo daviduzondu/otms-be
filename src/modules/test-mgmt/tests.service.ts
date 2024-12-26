@@ -16,6 +16,7 @@ import { addMinutes, isWithinInterval } from 'date-fns';
 import { QuestionType } from '../kysesly/kysesly-types/enums';
 import _ from 'lodash';
 import * as test from 'node:test';
+import { sql } from 'kysely';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { customAlphabet } = require('fix-esm').require('nanoid');
 
@@ -305,7 +306,11 @@ export class TestService {
       startedAt: submission?.startedAt,
       isWithinTime: question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) : this.isWithinTime(testAttempt.startedAt, testAttempt.durationMin + 2),
       isCorrect: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) ? String(answer) === question.correctAnswer : null,
-      point: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) && String(answer) === question?.correctAnswer ? question.points : null,
+      point: (['mcq', 'trueOrFalse'] as QuestionType[]).includes(question.type)
+        ? String(answer) === question?.correctAnswer
+          ? question.points
+          : 0
+        : null
     };
 
     // console.log({ ...payload, answer });
@@ -492,33 +497,22 @@ export class TestService {
         jsonArrayFrom(
           eb
             .selectFrom('questions')
-            .leftJoin('student_grading', (join) =>
-              join
-                .onRef('student_grading.questionId', '=', 'questions.id')
-                .onRef('student_grading.studentId', '=', 'test_participants.studentId')
-                .onRef('student_grading.testId', '=', 'test_participants.testId')
-            )
+            .leftJoin('student_grading', (join) => join.onRef('student_grading.questionId', '=', 'questions.id').onRef('student_grading.studentId', '=', 'test_participants.studentId').onRef('student_grading.testId', '=', 'test_participants.testId'))
             .where('questions.testId', '=', testId)
             .where((eb) => {
               return eb('questions.isDeleted', '=', false).or('questions.isDeleted', '=', null);
             })
-            .select([
-              'questions.id',
-              'questions.body',
-              'questions.options',
-              'questions.correctAnswer',
-              'student_grading.startedAt',
-              'student_grading.isTouched',
-              'questions.index',
-              'student_grading.answer',
-              'student_grading.point',
-              'student_grading.isCorrect',
-              'student_grading.isWithinTime',
-            ])
+            .select(({ eb }) =>
+              ['questions.id', 'questions.body', 'questions.options', 'questions.correctAnswer', 'questions.type',
+                'student_grading.startedAt', 'student_grading.isTouched', 'questions.index', 'student_grading.answer',
+                'student_grading.point', 'student_grading.isCorrect', 'student_grading.isWithinTime', eb.case().when('questions.type', 'in',['mcq', 'trueOrFalse']).then(true).else(false).end().as('autoGraded'),
+                eb.case().when('questions.type', 'in',['mcq', 'trueOrFalse']).then(true).else(false).end().as('graded')
+              ]),
         ).as('answers')
       ])
       .where('test_participants.testId', '=', testId)
       .execute();
+
 
     const responses = await this.db.selectFrom('questions').leftJoin('student_grading', 'student_grading.questionId', 'questions.id').where('questions.testId', '=', testId).where((eb) => {
       return eb('isDeleted', '=', false).or('isDeleted', '=', null);
@@ -526,8 +520,8 @@ export class TestService {
 
     return {
       message: `Submissions for test: ${testId}`,
-      data: betterResponses
-    }
+      data: betterResponses.map(response => (Object.assign(response, {webcamCaptures:[], completed: false}))),
+    };
   }
 
   private isWithinTime(startedAt: Date, timeLimit: number) {

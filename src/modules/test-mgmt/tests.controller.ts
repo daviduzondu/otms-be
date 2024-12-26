@@ -114,6 +114,13 @@ export class TestsController {
 
 
   @Get(':id/responses')
+  @CheckOwnership({
+    table: 'tests',
+    column: 'id',
+    foreignKey: 'teacherId',
+    pathOnReq: ['params', 'id'],
+  })
+  @UseGuards(JwtAuthGuard, OwnerGuard)
   async getResponses(@Param('id', ParseUUIDPipe) testId: string){
     return await this.testService.getResponses(testId);
   }
