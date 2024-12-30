@@ -55,8 +55,9 @@ export type student_grading = {
     answer: string | null;
     isTouched: Generated<boolean>;
     point: number | null;
+    autoGraded: Generated<boolean>;
+    overridden: Generated<boolean>;
     isWithinTime: boolean | null;
-    isCorrect: boolean | null;
     startedAt: Timestamp | null;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;

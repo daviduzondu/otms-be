@@ -184,8 +184,9 @@ model student_grading {
   answer       String?
   isTouched    Boolean   @default(false)
   point        Int?
+  autoGraded   Boolean   @default(false)
+  overridden   Boolean   @default(false)
   isWithinTime Boolean?
-  isCorrect    Boolean?
   startedAt    DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @default(now())

@@ -12,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
 import { customAlphabet } from 'nanoid';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/postgres';
-import { addMinutes, isWithinInterval } from 'date-fns';
+import { addMinutes, format, isWithinInterval } from 'date-fns';
 import { QuestionType } from '../kysesly/kysesly-types/enums';
 import _ from 'lodash';
 import * as test from 'node:test';
@@ -305,7 +305,7 @@ export class TestService {
     const payload = {
       startedAt: submission?.startedAt,
       isWithinTime: question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) : this.isWithinTime(testAttempt.startedAt, testAttempt.durationMin + 2),
-      isCorrect: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type) ? String(answer) === question.correctAnswer : null,
+      autoGraded: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type),
       point: (['mcq', 'trueOrFalse'] as QuestionType[]).includes(question.type)
         ? String(answer) === question?.correctAnswer
           ? question.points
@@ -329,7 +329,6 @@ export class TestService {
         oc.columns(['testId', 'questionId', 'studentId']).doUpdateSet({
           ...Object.assign(payload, {
             answer: payload.isWithinTime ? answer : submission.answer,
-            isCorrect: payload.isWithinTime ? payload.isCorrect : submission.isCorrect,
             point: payload.isWithinTime ? payload.point : submission.point,
           }),
         }),
@@ -492,8 +491,18 @@ export class TestService {
     const betterResponses = await this.db
       .selectFrom('students')
       .innerJoin('test_participants', 'test_participants.studentId', 'students.id')
-      .selectAll()
+      .innerJoin('test_attempts', (join)=> join.onRef('test_attempts.studentId', '=', 'students.id').on('test_attempts.endsAt', '<', new Date()))
+      .selectAll('students')
       .select((eb) => [
+        eb
+          .selectFrom('test_attempts')
+          .select(eb.fn.count<number>('test_attempts.id').as('c'))
+          .whereRef('test_attempts.testId', '=', 'test_participants.testId')
+          .where('test_attempts.endsAt', '>', new Date())
+          .as('pendingSubmissionsCount'),
+        'test_attempts.startedAt',
+        'test_attempts.endsAt',
+        'test_attempts.submittedAt',
         jsonArrayFrom(
           eb
             .selectFrom('questions')
@@ -503,26 +512,32 @@ export class TestService {
               return eb('questions.isDeleted', '=', false).or('questions.isDeleted', '=', null);
             })
             .select(({ eb }) =>
-              ['questions.id', 'questions.body', 'questions.options', 'questions.correctAnswer', 'questions.type',
-                'student_grading.startedAt', 'student_grading.isTouched', 'questions.index', 'student_grading.answer',
-                'student_grading.point', 'student_grading.isCorrect', 'student_grading.isWithinTime', eb.case().when('questions.type', 'in',['mcq', 'trueOrFalse']).then(true).else(false).end().as('autoGraded'),
-                eb.case().when('questions.type', 'in',['mcq', 'trueOrFalse']).then(true).else(false).end().as('graded')
+              ['questions.id as questionId', 'questions.body', 'questions.options', 'questions.correctAnswer', 'questions.type', 'questions.points as maxPoints', 'student_grading.autoGraded',
+                'student_grading.startedAt', 'student_grading.isTouched', 'questions.index', 'student_grading.answer', 'student_grading.point',
+                  'student_grading.isWithinTime', 'student_grading.id',
+                // eb.case().when('questions.type', 'in',['mcq', 'trueOrFalse']).then(eb.case().when('student_grading.point', 'is', null).then(0).end()).end().as('point'),
               ]),
         ).as('answers')
       ])
       .where('test_participants.testId', '=', testId)
       .execute();
 
-
-    const responses = await this.db.selectFrom('questions').leftJoin('student_grading', 'student_grading.questionId', 'questions.id').where('questions.testId', '=', testId).where((eb) => {
-      return eb('isDeleted', '=', false).or('isDeleted', '=', null);
-    }).selectAll().select((eb)=>[jsonObjectFrom(eb.selectFrom('students').whereRef('students.id', '=', 'student_grading.studentId').selectAll()).as('studentInfo')]).execute();
+    //
+    // const responses = await this.db.selectFrom('questions').leftJoin('student_grading', 'student_grading.questionId', 'questions.id').where('questions.testId', '=', testId).where((eb) => {
+    //   return eb('isDeleted', '=', false).or('isDeleted', '=', null);
+    // }).selectAll().select((eb)=>[jsonObjectFrom(eb.selectFrom('students').whereRef('students.id', '=', 'student_grading.studentId').selectAll()).as('studentInfo')]).execute();
 
     return {
       message: `Submissions for test: ${testId}`,
-      data: betterResponses.map(response => (Object.assign(response, {webcamCaptures:[], completed: false}))),
+      data: betterResponses.map(response => (Object.assign(response, {webcamCaptures:[], completed: false, pendingSubmissionsCount: Number(response.pendingSubmissionsCount)}))),
     };
   }
+
+  async updateScore(testId:string, point:number, questionId:string, studentId:string, autoGrade:string) {
+    await this.db.updateTable('student_grading').set({point, autoGraded: autoGrade === "true" ? true : false}).where('testId', '=', testId).where('student_grading.studentId', '=', studentId).where('student_grading.questionId', '=', questionId).execute();
+    return {message: "Successfully updated score"}
+  }
+
 
   private isWithinTime(startedAt: Date, timeLimit: number) {
     const now = new Date();

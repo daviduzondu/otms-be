@@ -1,4 +1,18 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, Req, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  Query,
+  Req,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CreateTestDto } from './dto/create-test.dto';
 import { Request } from 'express';
@@ -8,6 +22,7 @@ import { OwnerGuard } from '../../guards/owner.guard';
 import { SendTestInvitationMailDto } from './dto/send-test.dto';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
 import { AccessTokenGuard } from '../../guards/access-token.guard';
+import { UpdateScoreDto } from './dto/update-score.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('tests')
@@ -129,6 +144,18 @@ export class TestsController {
   @Post('send-test')
   async sendTestInvitation(@Body() payload: SendTestInvitationMailDto, @Req() req: Request) {
     return await this.testService.sendTestInvitationMail(req, payload);
+  }
+
+  @CheckOwnership({
+    table: 'tests',
+    column: 'id',
+    foreignKey: 'teacherId',
+    pathOnReq: ['params', 'id'],
+  })
+  @UseGuards(JwtAuthGuard, OwnerGuard)
+  @Post(':id/grade')
+  async updateScore(@Param("id", ParseUUIDPipe) testId:string, @Body() {studentId, point, questionId}: UpdateScoreDto, @Query("autoGrade") autoGrade: string){
+  return await this.testService.updateScore(testId, point, questionId, studentId, autoGrade)
   }
 
   async getPrintsVersion() {}
