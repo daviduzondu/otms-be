@@ -19,7 +19,7 @@ import { Request } from 'express';
 import { TestService } from './tests.service';
 import CheckOwnership from '../../decorators/check-ownership.decorator';
 import { OwnerGuard } from '../../guards/owner.guard';
-import { SendTestInvitationMailDto } from './dto/send-test.dto';
+import { SendTestInvitationMailDto, SendTestTokenDto } from './dto/mail-test.dto';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
 import { AccessTokenGuard } from '../../guards/access-token.guard';
 import { UpdateScoreDto } from './dto/update-score.dto';
@@ -156,6 +156,11 @@ export class TestsController {
   @Post(':id/grade')
   async updateScore(@Param("id", ParseUUIDPipe) testId:string, @Body() {studentId, point, questionId}: UpdateScoreDto, @Query("autoGrade") autoGrade: string){
   return await this.testService.updateScore(testId, point, questionId, studentId, autoGrade)
+  }
+
+  @Post('send-token')
+  async sendTokenToEmail(@Body() payload: SendTestTokenDto){
+    return await this.testService.sendTokenToEmail(payload)
   }
 
   async getPrintsVersion() {}

@@ -6,7 +6,7 @@ import { Request } from 'express';
 import { tests } from '../kysesly/kysesly-types/kysesly';
 import { CustomException } from '../../exceptions/custom.exception';
 import { EmailService } from '../email/email.service';
-import { SendTestInvitationMailDto } from './dto/send-test.dto';
+import { SendTestInvitationMailDto, SendTestTokenDto } from './dto/mail-test.dto';
 import path from 'node:path';
 import { ConfigService } from '@nestjs/config';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
@@ -285,7 +285,10 @@ export class TestService {
         throw new CustomException('Attempt not found', HttpStatus.NOT_FOUND);
       });
 
-    if (testAttempt.status === 'submitted') throw new CustomException("You've already made a submission", HttpStatus.METHOD_NOT_ALLOWED);
+    const endsAt = new Date(testAttempt.endsAt);
+    const now = new Date();
+
+    if (testAttempt.status === 'submitted' || endsAt < now) throw new CustomException("You've already made a submission", HttpStatus.METHOD_NOT_ALLOWED);
 
     // Retrieve question
     const question = await this.db
@@ -491,7 +494,11 @@ export class TestService {
     const betterResponses = await this.db
       .selectFrom('students')
       .innerJoin('test_participants', 'test_participants.studentId', 'students.id')
-      .innerJoin('test_attempts', (join)=> join.onRef('test_attempts.studentId', '=', 'students.id').on('test_attempts.endsAt', '<', new Date()))
+      .innerJoin('test_attempts', (join)=> join.onRef('test_attempts.studentId', '=', 'students.id').on((eb) =>
+        eb.or([
+          eb('test_attempts.endsAt', '<', new Date()),
+          eb('test_attempts.status', '=', 'submitted')
+        ])))
       .selectAll('students')
       .select((eb) => [
         eb
@@ -499,6 +506,7 @@ export class TestService {
           .select(eb.fn.count<number>('test_attempts.id').as('c'))
           .whereRef('test_attempts.testId', '=', 'test_participants.testId')
           .where('test_attempts.endsAt', '>', new Date())
+          .where("test_attempts.status", '=', 'unsubmitted')
           .as('pendingSubmissionsCount'),
         'test_attempts.startedAt',
         'test_attempts.endsAt',
@@ -514,7 +522,7 @@ export class TestService {
             .select(({ eb }) =>
               ['questions.id as questionId', 'questions.body', 'questions.options', 'questions.correctAnswer', 'questions.type', 'questions.points as maxPoints', 'student_grading.autoGraded',
                 'student_grading.startedAt', 'student_grading.isTouched', 'questions.index', 'student_grading.answer', 'student_grading.point',
-                  'student_grading.isWithinTime', 'student_grading.id',
+                'student_grading.isWithinTime', 'student_grading.id',
                 // eb.case().when('questions.type', 'in',['mcq', 'trueOrFalse']).then(eb.case().when('student_grading.point', 'is', null).then(0).end()).end().as('point'),
               ]),
         ).as('answers')
@@ -534,8 +542,53 @@ export class TestService {
   }
 
   async updateScore(testId:string, point:number, questionId:string, studentId:string, autoGrade:string) {
-    await this.db.updateTable('student_grading').set({point, autoGraded: autoGrade === "true" ? true : false}).where('testId', '=', testId).where('student_grading.studentId', '=', studentId).where('student_grading.questionId', '=', questionId).execute();
+    await this.db.updateTable('student_grading').set({point, autoGraded: autoGrade === "true"}).where('testId', '=', testId).where('student_grading.studentId', '=', studentId).where('student_grading.questionId', '=', questionId).execute();
     return {message: "Successfully updated score"}
+  }
+
+  async sendTokenToEmail({ email, code }: SendTestTokenDto) {
+    console.log(email)
+    // Get the test
+    const test = await this.db
+      .selectFrom('tests')
+      .selectAll()
+      .where('tests.code', '=', code)
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException('Test not found!', HttpStatus.NOT_FOUND);
+      });
+
+    // Get the students
+    const results = await this.db.selectFrom('students').leftJoin('student_tokens', 'student_tokens.studentId', 'students.id').selectAll().where('students.email', '=', email).where('testId', '=', test.id).execute();
+
+    if (results.length === 0) {
+      return {};
+      // throw new CustomException('Some students in this list do not exist', HttpStatus.NOT_FOUND);
+    }
+
+    // Get the teacher
+    // const teacher = await this.db
+    //   .selectFrom('teachers')
+    //   .selectAll()
+    //   .where('id', '=', test.teacherId)
+    //   .executeTakeFirstOrThrow(() => {
+    //     throw new CustomException('Teacher not found!', HttpStatus.NOT_FOUND);
+    //   });
+
+    await this.emailService.sendEmail({
+      to: results.map((x) => ({ email: x.email, name: `${x.firstName} ${x.lastName}` })),
+        subject: `You requested a PIN for test: ${test.title}`,
+      templateName: 'get-token',
+      context: results.map((x) => ({
+        studentName: `${x.firstName} ${x.lastName}`,
+        accessCode: x.accessCode,
+        testName: test.title,
+        email: x.email,
+      })),
+    });
+
+    return {
+      message: 'Mail sent to all receipients',
+    };
   }
 
 

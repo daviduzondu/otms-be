@@ -167,6 +167,7 @@ model test_participants {
   studentId     String
   testId        String
   origin        String?
+  graded        Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now())
   test          tests    @relation(fields: [testId], references: [id])
@@ -185,7 +186,6 @@ model student_grading {
   isTouched    Boolean   @default(false)
   point        Int?
   autoGraded   Boolean   @default(false)
-  overridden   Boolean   @default(false)
   isWithinTime Boolean?
   startedAt    DateTime?
   createdAt    DateTime  @default(now())

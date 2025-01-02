@@ -56,7 +56,6 @@ export type student_grading = {
     isTouched: Generated<boolean>;
     point: number | null;
     autoGraded: Generated<boolean>;
-    overridden: Generated<boolean>;
     isWithinTime: boolean | null;
     startedAt: Timestamp | null;
     createdAt: Generated<Timestamp>;
@@ -115,6 +114,7 @@ export type test_participants = {
     studentId: string;
     testId: string;
     origin: string | null;
+    graded: Generated<boolean>;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
