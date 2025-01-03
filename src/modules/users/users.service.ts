@@ -24,7 +24,7 @@ export class UsersService {
     const teacher = await this.db
       .selectFrom('teachers')
       .leftJoin('institutions', 'teachers.institutionId', 'institutions.id')
-      .leftJoin('media', 'media.teacherId', 'teachers.id')
+      .leftJoin('media', 'media.uploader', 'teachers.id')
       .leftJoin('tests', 'tests.teacherId', 'teachers.id')
       .select(['teachers.id', 'teachers.firstName', 'teachers.lastName', 'teachers.email', 'teachers.photoId', 'teachers.banned', 'teachers.isEmailVerified', 'teachers.authType', 'tests.id as testId', 'institutions.id as institutionId', 'institutions.name as institutionName', 'media.id as mediaId', 'media.url as mediaUrl'])
       .where(teacherId ? 'teachers.id' : 'teachers.email', '=', teacherId ?? email)

@@ -24,7 +24,7 @@ export type media = {
     url: string;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
-    teacherId: string;
+    uploader: string;
 };
 export type questions = {
     id: GeneratedAlways<string>;

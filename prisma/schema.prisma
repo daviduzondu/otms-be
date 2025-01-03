@@ -36,15 +36,15 @@ model institutions {
 }
 
 model media {
-  id                                 String      @id @default(dbgenerated("gen_random_uuid()"))
-  type                               MediaType
-  url                                String
-  createdAt                          DateTime    @default(now())
-  updatedAt                          DateTime    @default(now())
-  teacherId                          String
-  teachers_media_teacherIdToteachers teachers    @relation("media_teacherIdToteachers", fields: [teacherId], references: [id])
-  questions                          questions[]
-  teachers_teachers_photoIdTomedia   teachers[]  @relation("teachers_photoIdTomedia")
+  id                                String      @id @default(dbgenerated("gen_random_uuid()"))
+  type                              MediaType
+  url                               String
+  createdAt                         DateTime    @default(now())
+  updatedAt                         DateTime    @default(now())
+  uploader                          String
+  teachers_media_UploaderToteachers teachers    @relation("media_teacherIdToteachers", fields: [uploader], references: [id])
+  questions                         questions[]
+  teachers_teachers_photoIdTomedia  teachers[]  @relation("teachers_photoIdTomedia")
 }
 
 model questions {
