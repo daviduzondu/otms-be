@@ -41,8 +41,12 @@ model media {
   url                               String
   createdAt                         DateTime    @default(now())
   updatedAt                         DateTime    @default(now())
-  uploader                          String
-  teachers_media_UploaderToteachers teachers    @relation("media_teacherIdToteachers", fields: [uploader], references: [id])
+  uploader                          String?
+  studentId                         String
+  testId                            String
+  media_StudentId                   students    @relation(fields: [studentId], references: [id])
+  media_testId                      tests       @relation(fields: [testId], references: [id])
+  teachers_media_UploaderToteachers teachers?   @relation("media_teacherIdToteachers", fields: [uploader], references: [id])
   questions                         questions[]
   teachers_teachers_photoIdTomedia  teachers[]  @relation("teachers_photoIdTomedia")
 }
@@ -91,6 +95,7 @@ model students {
   student_tokens    student_tokens[]
   student_grading   student_grading[]
   test_participants test_participants[]
+  media             media[]
 }
 
 model teachers {
@@ -140,6 +145,7 @@ model tests {
   student_tokens      student_tokens[]
   student_grading     student_grading[]
   test_participants   test_participants[]
+  media               media[]
 }
 
 model test_attempts {

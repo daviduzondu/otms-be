@@ -30,7 +30,7 @@ export class FirebaseStorageEngine implements StorageEngine {
       },
     });
 
-    if (!['image/jpeg', 'image/jpg', 'audio/mpeg', 'video/mp4'].includes(file.mimetype)) {
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'audio/mpeg', 'video/mp4'].includes(file.mimetype)) {
       callback(new CustomException('File type not supported', HttpStatus.UNPROCESSABLE_ENTITY), null);
       return;
     }

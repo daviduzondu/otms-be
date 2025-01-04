@@ -4,6 +4,7 @@ import { Database } from '../kysesly/database';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionOrderDto } from './dto/update-question-index.dto';
 import { CustomException } from 'src/exceptions/custom.exception';
+import { jsonObjectFrom } from 'kysely/helpers/postgres';
 
 @Injectable()
 export class QuestionsService {
@@ -36,6 +37,7 @@ export class QuestionsService {
         }),
       )
       .returningAll()
+      .returning((eb)=>[jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
       .executeTakeFirst();
 
     return {
@@ -55,6 +57,7 @@ export class QuestionsService {
       .set(payload as any)
       .where('id', '=', questionId)
       .returningAll()
+      .returning((eb)=>[jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
       .execute();
 
     return {
@@ -99,5 +102,13 @@ export class QuestionsService {
     return {
       message: 'Update applied to all questions',
     };
+  }
+
+  async removeMedia(questionId:string, mediaId: string) {
+    await this.db.updateTable('questions').set('mediaId', null).where('id','=', questionId).where('mediaId', '=', mediaId).execute();
+
+    return {
+      message: "Media removed successfully",
+    }
   }
 }

@@ -213,6 +213,7 @@ export class TestService {
     const questions = await this.db
       .selectFrom('questions')
       .selectAll('questions') // Select all fields from 'questions'
+      .select((eb)=>[jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
       .where('testId', '=', id)
       .where((eb) => {
         return eb('isDeleted', '=', false).or('isDeleted', '=', null);

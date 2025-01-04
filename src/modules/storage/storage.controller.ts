@@ -1,8 +1,8 @@
 import {
   Controller, FileTypeValidator,
   MaxFileSizeValidator,
-  ParseFilePipe,
-  Post,
+  ParseFilePipe, ParseUUIDPipe,
+  Post, Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -23,7 +23,7 @@ export class StorageController {
   @UseGuards(JwtAuthGuard)
   // @ts-ignore
   @UseInterceptors(FileInterceptor('file'))
-  public async uploadFile(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
-    return this.storageService.uploadFile(file, req);
+  public async uploadFile(@UploadedFile() file: Express.Multer.File, @Req() req: Request, @Query("questionId", new ParseUUIDPipe({optional: true})) questionId: string) {
+    return this.storageService.uploadFile(file, req, questionId);
   }
 }
