@@ -16,6 +16,7 @@
         "POST",
         "PUT",
         "DELETE",
+        "PATCH",
         "OPTIONS"
       ]
     }
