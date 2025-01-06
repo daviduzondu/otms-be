@@ -24,7 +24,9 @@ export type media = {
     url: string;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
-    uploader: string;
+    uploader: string | null;
+    studentId: string | null;
+    testId: string | null;
 };
 export type questions = {
     id: GeneratedAlways<string>;
@@ -115,6 +117,7 @@ export type test_participants = {
     testId: string;
     origin: string | null;
     graded: Generated<boolean>;
+    isTouched: Generated<boolean>;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };

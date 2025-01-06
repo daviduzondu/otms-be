@@ -47,14 +47,8 @@ export class QuestionsController {
     return await this.questionsService.deleteQuestion(questionId);
   }
 
-  @UseGuards(JwtAuthGuard, OwnerGuard)
+  @UseGuards(JwtAuthGuard)
   @Patch('/update-index/')
-  @CheckOwnership({
-    table: 'tests',
-    column: 'id',
-    foreignKey: 'teacherId',
-    pathOnReq: ['body', 'testId'],
-  })
   async updateIndex(@Body() updateQuestionIndexDto: UpdateQuestionOrderDto) {
     return await this.questionsService.updateQuestionOrder(updateQuestionIndexDto);
   }
@@ -68,7 +62,7 @@ export class QuestionsController {
   })
 
   @Patch(':questionId/remove-media')
-  async removeMedia(@Param('questionId', ParseUUIDPipe) questionId: string,  @Body() { mediaId }: RemoveMediaDto) {
-    return await this.questionsService.removeMedia(questionId, mediaId)
+  async removeMedia(@Param('questionId', ParseUUIDPipe) questionId: string,  @Body() { mediaId, testId }: RemoveMediaDto) {
+    return await this.questionsService.removeMedia(questionId, mediaId, testId)
   }
 }

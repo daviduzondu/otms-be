@@ -4,6 +4,7 @@ import { InjectKysesly } from '../kysesly/decorators/inject-repository';
 import { CreateStudentDto } from './dto/student.dto';
 import { CustomException } from '../../exceptions/custom.exception';
 import { ClassService } from '../class/class.service';
+import { jsonObjectFrom } from 'kysely/helpers/postgres';
 
 @Injectable()
 export class UsersService {
@@ -87,5 +88,16 @@ export class UsersService {
       message: 'Student found',
       data: student,
     };
+  }
+
+  async getStudentByAccessCode(accessCode: string ){
+    const student = await this.db.selectFrom('students').innerJoin('student_tokens','student_tokens.studentId','students.id').innerJoin('test_participants', 'test_participants.studentId', 'student_tokens.studentId').innerJoin('tests', 'tests.id', 'student_tokens.testId').where('student_tokens.accessCode', '=', accessCode).selectAll('students').select((eb)=>['test_participants.isTouched as isTouched', jsonObjectFrom(eb.selectFrom('tests').whereRef('tests.id', '=', 'student_tokens.testId').selectAll()).as("testInfo")]).executeTakeFirstOrThrow(()=>{
+      throw new CustomException("Failed to retrieve student information. Contact teacher for help.", HttpStatus.NOT_FOUND)
+    });
+
+    return {
+      message: "Student found",
+      data: student,
+    }
   }
 }

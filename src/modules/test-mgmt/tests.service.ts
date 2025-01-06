@@ -237,7 +237,7 @@ export class TestService {
         .where('questions.id', '=', questionId)
         .where((eb) => eb('isDeleted', '=', false).or('isDeleted', '=', null))
         .where('testId', '=', testId)
-        .select(['body', 'mediaId', 'options', 'points', 'timeLimit', 'type', 'id'])
+        .select((eb)=>[jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media'), 'body', 'mediaId', 'options', 'points', 'timeLimit', 'type', 'id'])
         .executeTakeFirstOrThrow(() => {
           throw new CustomException('Question not found!');
         });
@@ -381,6 +381,9 @@ export class TestService {
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('Failed to retrieve details. Is the access token correct?', HttpStatus.NOT_FOUND);
       });
+
+    await this.db.updateTable('test_participants').set({isTouched: true}).where('studentId', '=', studentId).where('testId', '=', testId).execute();
+
 
     // Retrieve the test associated with that access code.
     const test = await this.db
@@ -526,7 +529,8 @@ export class TestService {
                 'student_grading.isWithinTime', 'student_grading.id',
                 // eb.case().when('questions.type', 'in',['mcq', 'trueOrFalse']).then(eb.case().when('student_grading.point', 'is', null).then(0).end()).end().as('point'),
               ]),
-        ).as('answers')
+        ).as('answers'),
+        jsonArrayFrom(eb.selectFrom('media').whereRef('media.testId', '=', 'test_attempts.testId').whereRef('media.studentId', '=', 'students.id').select(['media.id', 'url', 'type', 'createdAt as timestamp']).where('media.testId', '=', testId)).as("webcamCaptures")
       ])
       .where('test_participants.testId', '=', testId)
       .execute();
@@ -538,7 +542,7 @@ export class TestService {
 
     return {
       message: `Submissions for test: ${testId}`,
-      data: betterResponses.map(response => (Object.assign(response, {webcamCaptures:[], completed: false, pendingSubmissionsCount: Number(response.pendingSubmissionsCount)}))),
+      data: betterResponses.map(response => (Object.assign(response, { completed: false, pendingSubmissionsCount: Number(response.pendingSubmissionsCount)}))),
     };
   }
 
@@ -588,7 +592,7 @@ export class TestService {
     });
 
     return {
-      message: 'Mail sent to all receipients',
+      message: 'Mail sent to all recipients',
     };
   }
 

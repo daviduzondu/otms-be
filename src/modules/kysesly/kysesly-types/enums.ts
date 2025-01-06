@@ -11,7 +11,6 @@ export type AuthType = (typeof AuthType)[keyof typeof AuthType];
 export const MediaType = {
     image: "image",
     video: "video",
-    pdf: "pdf",
     audio: "audio"
 } as const;
 export type MediaType = (typeof MediaType)[keyof typeof MediaType];

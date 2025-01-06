@@ -104,7 +104,12 @@ export class QuestionsService {
     };
   }
 
-  async removeMedia(questionId:string, mediaId: string) {
+  async removeMedia(questionId:string, mediaId: string, testId: string) {
+    const existingAttempt = await this.db.selectFrom('test_attempts').selectAll().where('testId', '=', testId).executeTakeFirst();
+    if (existingAttempt) {
+      throw new CustomException('You cannot make any changes because one or more students have attempted this test', HttpStatus.CONFLICT);
+    }
+
     await this.db.updateTable('questions').set('mediaId', null).where('id','=', questionId).where('mediaId', '=', mediaId).execute();
 
     return {
