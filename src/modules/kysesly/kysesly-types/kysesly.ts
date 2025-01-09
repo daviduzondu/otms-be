@@ -59,6 +59,7 @@ export type student_grading = {
     point: number | null;
     autoGraded: Generated<boolean>;
     isWithinTime: boolean | null;
+    submittedAt: Timestamp | null;
     startedAt: Timestamp | null;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;

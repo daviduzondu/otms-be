@@ -194,6 +194,7 @@ model student_grading {
   point        Int?
   autoGraded   Boolean   @default(false)
   isWithinTime Boolean?
+  submittedAt  DateTime?
   startedAt    DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @default(now())

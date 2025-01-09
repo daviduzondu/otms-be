@@ -12,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
 import { customAlphabet } from 'nanoid';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/postgres';
-import { addMinutes, format, isWithinInterval } from 'date-fns';
+import { addMinutes, format, isBefore, isWithinInterval } from 'date-fns';
 import { QuestionType } from '../kysesly/kysesly-types/enums';
 import _ from 'lodash';
 import * as test from 'node:test';
@@ -53,7 +53,7 @@ export class TestService {
     const test = await this.db.insertInto('tests').values(payload).returningAll().executeTakeFirst();
 
     return {
-      message: 'Test Creation Sucessful',
+      message: 'Test Creation Successful',
       data: test,
     };
   }
@@ -239,10 +239,15 @@ export class TestService {
         .where('testId', '=', testId)
         .select((eb)=>[jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media'), 'body', 'mediaId', 'options', 'points', 'timeLimit', 'type', 'id'])
         .executeTakeFirstOrThrow(() => {
-          throw new CustomException('Question not found!');
+          throw new CustomException(`Question with id ${questionId} for test ${testId} not found!`);
         });
 
-      await trx.updateTable('test_attempts').set('currentQuestionId', questionId).executeTakeFirst();
+      await trx
+        .updateTable('test_attempts')
+        .set({ currentQuestionId: questionId })
+        .where('test_attempts.studentId', '=', studentId)
+        .where('test_attempts.testId', '=', testId)
+        .executeTakeFirst();
 
       const { startedAt } = await trx
         .insertInto('student_grading')
@@ -254,9 +259,10 @@ export class TestService {
           questionId,
         })
         .onConflict((oc) =>
-          oc.columns(['questionId', 'testId', 'studentId']).doUpdateSet((eb) => ({
-            studentId: eb.ref('excluded.studentId'),
-          })),
+          oc.columns(['questionId', 'testId', 'studentId']).doUpdateSet({
+            startedAt: new Date(),
+            isTouched: true,
+          })
         )
         .returningAll()
         .executeTakeFirst();
@@ -282,6 +288,7 @@ export class TestService {
       .leftJoin('tests', 'tests.id', 'test_attempts.testId')
       .selectAll()
       .where('test_attempts.testId', '=', testId)
+      .where('test_attempts.studentId', '=', studentId)
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('Attempt not found', HttpStatus.NOT_FOUND);
       });
@@ -289,8 +296,14 @@ export class TestService {
     const endsAt = new Date(testAttempt.endsAt);
     const now = new Date();
 
-    if (testAttempt.status === 'submitted' || endsAt < now) throw new CustomException("You've already made a submission", HttpStatus.METHOD_NOT_ALLOWED);
+// Validate test attempt
+    if (testAttempt.status === 'submitted') {
+      throw new CustomException("You've already made a submission", HttpStatus.METHOD_NOT_ALLOWED);
+    }
 
+    if (now > endsAt) {
+      throw new CustomException("The test attempt has already ended", HttpStatus.METHOD_NOT_ALLOWED);
+    }
     // Retrieve question
     const question = await this.db
       .selectFrom('questions')
@@ -302,12 +315,13 @@ export class TestService {
       });
 
     // Retrieve start time for timed questions
-    let submission = await this.db.selectFrom('student_grading').selectAll().where('questionId', '=', questionId).where('testId', '=', testId).executeTakeFirst();
+    let submission = await this.db.selectFrom('student_grading').selectAll().where('questionId', '=', questionId).where('testId', '=', testId).where('student_grading.studentId', '=', studentId).executeTakeFirst();
 
     if (!submission?.startedAt) throw new CustomException('One or more parameters are missing', HttpStatus.BAD_REQUEST);
 
     const payload = {
       startedAt: submission?.startedAt,
+      submittedAt: new Date(),
       isWithinTime: question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) : this.isWithinTime(testAttempt.startedAt, testAttempt.durationMin + 2),
       autoGraded: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type),
       point: (['mcq', 'trueOrFalse'] as QuestionType[]).includes(question.type)
@@ -334,6 +348,7 @@ export class TestService {
           ...Object.assign(payload, {
             answer: payload.isWithinTime ? answer : submission.answer,
             point: payload.isWithinTime ? payload.point : submission.point,
+            submittedAt: payload.isWithinTime ? payload.submittedAt : submission.submittedAt
           }),
         }),
       )
@@ -461,7 +476,13 @@ export class TestService {
       });
 
     // Get the students
-    const results = await this.db.selectFrom('students').leftJoin('student_tokens', 'student_tokens.studentId', 'students.id').selectAll().where('students.id', 'in', students).where('testId', '=', testId).execute();
+    const results = await this.db.selectFrom('students')
+      .leftJoin('test_attempts',
+        (join)=>join.onRef('test_attempts.studentId', '=', 'students.id')
+          .on('test_attempts.testId', '=', testId)).leftJoin('student_tokens', 'student_tokens.studentId', 'students.id')
+      .selectAll().where('test_attempts.studentId', 'is', null)
+      .where('students.id', 'in', students).where('student_tokens.testId', '=', testId).execute();
+
     if (results.length === 0) {
       throw new CustomException('Some students in this list do not exist', HttpStatus.NOT_FOUND);
     }
@@ -530,7 +551,10 @@ export class TestService {
                 // eb.case().when('questions.type', 'in',['mcq', 'trueOrFalse']).then(eb.case().when('student_grading.point', 'is', null).then(0).end()).end().as('point'),
               ]),
         ).as('answers'),
-        jsonArrayFrom(eb.selectFrom('media').whereRef('media.testId', '=', 'test_attempts.testId').whereRef('media.studentId', '=', 'students.id').select(['media.id', 'url', 'type', 'createdAt as timestamp']).where('media.testId', '=', testId)).as("webcamCaptures")
+        jsonArrayFrom(eb.selectFrom('media')
+          .where('media.testId', '=', testId)
+          .whereRef('media.studentId', '=', 'students.id')
+          .select(['media.id as id', 'url', 'media.type as type', 'media.createdAt as timestamp'])).as("webcamCaptures")
       ])
       .where('test_participants.testId', '=', testId)
       .execute();
@@ -581,7 +605,7 @@ export class TestService {
 
     await this.emailService.sendEmail({
       to: results.map((x) => ({ email: x.email, name: `${x.firstName} ${x.lastName}` })),
-        subject: `You requested a PIN for test: ${test.title}`,
+      subject: `You requested a PIN for test: ${test.title}`,
       templateName: 'get-token',
       context: results.map((x) => ({
         studentName: `${x.firstName} ${x.lastName}`,

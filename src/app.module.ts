@@ -20,6 +20,7 @@ import { StorageModule } from './modules/storage/storage.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import * as process from 'node:process';
 import { FirebaseModule } from './modules/firebase/firebase.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -70,7 +71,8 @@ validationSchema : Joi.object({
     EmailModule,
     ClassModule,
     StorageModule,
-    FirebaseModule
+    FirebaseModule,
+    AnalyticsModule
   ],
   controllers: [AppController],
 

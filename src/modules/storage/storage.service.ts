@@ -34,7 +34,7 @@ export class StorageService {
 
     const { id: mediaId, type, url  } = await this.db
       .insertInto('media')
-      .values({ studentId: studentId ? studentId : null, testId: testId ? testId : null,  url: this.configService.get('STORAGE_MODE') === 'local' ? path.join(`${req.protocol}://${req.get('host')}`, file.path) : file.path, type: this.mimeTypeMap(file.mimetype), uploader: studentId ? null : (req as any).user.id })
+      .values({ studentId: studentId ? studentId : null, testId: testId ? testId : null,  url: this.configService.get('STORAGE_MODE') === 'local' ? new URL(path.join(`${req.protocol}://${req.get('host')}`, file.path)).toString() : file.path, type: this.mimeTypeMap(file.mimetype), uploader: studentId ? null : (req as any).user.id })
       .returning(['id', 'type', 'url'])
       .executeTakeFirst();
 
