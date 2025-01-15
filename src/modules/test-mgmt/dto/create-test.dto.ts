@@ -5,7 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  Matches,
+  Matches, Max, Min,
 } from 'class-validator';
 
 export class CreateTestDto {
@@ -29,17 +29,19 @@ export class CreateTestDto {
   @IsString()
   instructions: string;
 
-  @IsNumber()
-  passingScore: number;
-
   @IsBoolean()
   requireFullScreen: boolean;
 
   @IsBoolean()
-  showCorrectAnswers: boolean;
+  showResultsAfterTest: boolean;
 
   @IsBoolean()
   disableCopyPaste: boolean;
+
+  @IsNumber()
+  @Min(30)
+  @Max(180)
+  durationMin: number;
 
   @IsBoolean()
   provideExplanations: boolean;

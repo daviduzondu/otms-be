@@ -23,6 +23,8 @@ model classes {
   student_class     student_class[]
   students          students[]          @relation("StudentClasses")
   test_participants test_participants[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @default(now()) @updatedAt
 }
 
 model institutions {
@@ -30,7 +32,7 @@ model institutions {
   name      String
   logo      String
   createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
   teachers  teachers[]
   tests     tests[]
 }
@@ -40,7 +42,7 @@ model media {
   type                              MediaType
   url                               String
   createdAt                         DateTime    @default(now())
-  updatedAt                         DateTime    @default(now())
+  updatedAt                         DateTime    @default(now()) @updatedAt
   uploader                          String?
   studentId                         String?
   testId                            String?
@@ -61,7 +63,7 @@ model questions {
   body            String
   mediaId         String?
   createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @default(now())
+  updatedAt       DateTime          @default(now()) @updatedAt
   points          Int               @default(10)
   isDeleted       Boolean           @default(false)
   index           Int               @default(0)
@@ -78,6 +80,8 @@ model student_class {
   removeAfter DateTime
   classes     classes  @relation(fields: [classId], references: [id])
   students    students @relation(fields: [studentId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 }
 
 model students {
@@ -88,6 +92,8 @@ model students {
   lastName          String
   middleName        String?
   student_class     student_class[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @default(now()) @updatedAt
   classes           classes[]           @relation("StudentClasses")
   addedBy           String
   teacherId         teachers            @relation(fields: [addedBy], references: [id])
@@ -110,7 +116,7 @@ model teachers {
   authType                        AuthType?
   institutionId                   String?
   createdAt                       DateTime      @default(now())
-  updatedAt                       DateTime      @default(now())
+  updatedAt                       DateTime      @default(now()) @updatedAt
   classes                         classes[]
   media_media_teacherIdToteachers media[]       @relation("media_teacherIdToteachers")
   institutions                    institutions? @relation(fields: [institutionId], references: [id])
@@ -120,32 +126,31 @@ model teachers {
 }
 
 model tests {
-  id                  String              @id @default(dbgenerated("gen_random_uuid()"))
-  institutionId       String?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @default(now())
-  code                String?             @unique
-  printCount          Int?
-  durationMin         Int                 @default(60)
-  instructions        String?
-  title               String
-  isDeleted           Boolean             @default(false)
-  isRevoked           Boolean             @default(false)
-  disableCopyPaste    Boolean?            @default(false)
-  passingScore        Int?                @default(70)
-  provideExplanations Boolean?            @default(false)
-  randomizeQuestions  Boolean?            @default(false)
-  requireFullScreen   Boolean?            @default(true)
-  showCorrectAnswers  Boolean?            @default(false)
-  teacherId           String
-  questions           questions[]
-  institutions        institutions?       @relation(fields: [institutionId], references: [id])
-  teachers            teachers            @relation(fields: [teacherId], references: [id])
-  test_attempts       test_attempts[]
-  student_tokens      student_tokens[]
-  student_grading     student_grading[]
-  test_participants   test_participants[]
-  media               media[]
+  id                   String              @id @default(dbgenerated("gen_random_uuid()"))
+  institutionId        String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @default(now()) @updatedAt
+  code                 String?             @unique
+  printCount           Int?
+  durationMin          Int                 @default(60)
+  instructions         String?
+  title                String
+  isDeleted            Boolean             @default(false)
+  isRevoked            Boolean             @default(false)
+  disableCopyPaste     Boolean?            @default(false)
+  provideExplanations  Boolean?            @default(false)
+  randomizeQuestions   Boolean?            @default(false)
+  requireFullScreen    Boolean?            @default(true)
+  showResultsAfterTest Boolean             @default(false)
+  teacherId            String
+  questions            questions[]
+  institutions         institutions?       @relation(fields: [institutionId], references: [id])
+  teachers             teachers            @relation(fields: [teacherId], references: [id])
+  test_attempts        test_attempts[]
+  student_tokens       student_tokens[]
+  student_grading      student_grading[]
+  test_participants    test_participants[]
+  media                media[]
 }
 
 model test_attempts {
@@ -159,7 +164,7 @@ model test_attempts {
   currentQuestionId String
   status            AttemptStatus @default(unsubmitted)
   createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @default(now())
+  updatedAt         DateTime      @default(now()) @updatedAt
 
   tests                   tests     @relation(fields: [testId], references: [id])
   students                students  @relation(fields: [studentId], references: [id])
@@ -176,7 +181,7 @@ model test_participants {
   graded        Boolean  @default(false)
   isTouched     Boolean  @default(false)
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
   test          tests    @relation(fields: [testId], references: [id])
   student       students @relation(fields: [studentId], references: [id])
   student_class classes? @relation(fields: [origin], references: [id])
@@ -197,7 +202,7 @@ model student_grading {
   submittedAt  DateTime?
   startedAt    DateTime?
   createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
 
   student  students  @relation(fields: [studentId], references: [id])
   question questions @relation(fields: [questionId], references: [id])
@@ -214,7 +219,7 @@ model student_tokens {
   student    students @relation(fields: [studentId], references: [id])
   test       tests    @relation(fields: [testId], references: [id])
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 
   @@unique([testId, studentId, accessCode])
 }

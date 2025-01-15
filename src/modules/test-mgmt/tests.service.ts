@@ -35,20 +35,13 @@ export class TestService {
     return customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 12)();
   }
 
-  // async getTestRecordByUser(testId: string, req: any) {
-  //   return await this.db
-  //     .selectFrom('tests')
-  //     .selectAll()
-  //     .where('id', '=', testId)
-  //     .where('tests.teacherId', '=', (req as any).teacher.id)
-  //     .executeTakeFirstOrThrow();
-  // }
 
   async createNewTest(payload: CreateTestDto, req: Request) {
     Object.assign(payload, {
       code: await this.generateTestCode(),
       teacherId: (req as any).user.id,
     } as tests);
+
 
     const test = await this.db.insertInto('tests').values(payload).returningAll().executeTakeFirst();
 
@@ -190,8 +183,12 @@ export class TestService {
     await new Promise((res) => setTimeout(() => res(null), 1200));
     const tests = await this.db
       .selectFrom('tests')
+      .leftJoin('test_participants', 'test_participants.testId', 'tests.id')
       .selectAll('tests')
+      .select(eb=>[eb.fn.count('test_participants.id').as('participantCount')])
+      .groupBy('tests.id')
       .where('teacherId', '=', (req.user as any).id)
+      .where('tests.isDeleted', '=', false)
       .execute();
 
     return {
@@ -206,6 +203,7 @@ export class TestService {
       .selectAll('tests') // Select all fields from 'tests'
       .where('tests.id', '=', id)
       .where('tests.teacherId', '=', (req as any).user.id)
+      .where('tests.isDeleted', '=', false)
       .executeTakeFirstOrThrow(() => {
         return new CustomException('Test not found', HttpStatus.NOT_FOUND);
       });
@@ -407,7 +405,6 @@ export class TestService {
         'title',
         'instructions',
         'teacherId',
-        'passingScore',
         'durationMin',
         'id',
         'randomizeQuestions',
@@ -419,6 +416,7 @@ export class TestService {
             .selectAll(),
         ).as('questions'),
       ])
+      .where('tests.isDeleted', '=', false)
       .where('tests.id', '=', testId)
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('Test not found', HttpStatus.FOUND);
@@ -471,6 +469,7 @@ export class TestService {
       .selectFrom('tests')
       .selectAll()
       .where('tests.id', '=', testId)
+      .where('tests.isDeleted', '=', false)
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('Test not found!', HttpStatus.NOT_FOUND);
       });
@@ -582,6 +581,7 @@ export class TestService {
       .selectFrom('tests')
       .selectAll()
       .where('tests.code', '=', code)
+      .where('tests.isDeleted', '=', false)
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('Test not found!', HttpStatus.NOT_FOUND);
       });

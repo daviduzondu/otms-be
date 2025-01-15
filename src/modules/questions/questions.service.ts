@@ -40,6 +40,8 @@ export class QuestionsService {
       .returning((eb)=>[jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
       .executeTakeFirst();
 
+    // await this.db.updateTable('tests').set('updatedAt', question.updatedAt).where('tests.id', '=', question.testId).execute()
+
     return {
       message: 'Question added to test successfully',
       data: question,
@@ -58,7 +60,10 @@ export class QuestionsService {
       .where('id', '=', questionId)
       .returningAll()
       .returning((eb)=>[jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
-      .execute();
+      .executeTakeFirst();
+
+    // await this.db.updateTable('tests').set('updatedAt', question.updatedAt).where('tests.id', '=', question.testId).execute()
+
 
     return {
       message: 'Question edited successfully',

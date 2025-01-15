@@ -14,7 +14,7 @@ export class AnalyticsService {
       .selectFrom('teachers')
       .where('teachers.id', '=', teacherId)
       .select((eb) => [
-        eb.selectFrom('tests').whereRef('tests.teacherId', '=', 'teachers.id').select(eb.fn.count('id').as('c')).as('testCount'),
+        eb.selectFrom('tests').whereRef('tests.teacherId', '=', 'teachers.id').where('tests.isDeleted', '=', false).select(eb.fn.count('id').as('c')).as('testCount'),
         eb.selectFrom('classes').whereRef('classes.teacherId', '=', 'teachers.id').select(eb.fn.count('id').as('c')).as('classes'),
         eb.selectFrom('students').whereRef('students.addedBy', '=', 'teachers.id').select(eb.fn.count('id').as('c')).as('totalStudents'),
         eb
@@ -61,6 +61,7 @@ export class AnalyticsService {
                 eb('test_attempts.status', '=', 'submitted'),
               ])
             )
+            .where('test_attempts.testId', '=', testId)
             .groupBy(['test_participants.origin', 'students.id', 'students.firstName', 'students.lastName'])
             .select((eb) => [
               jsonObjectFrom(
@@ -86,6 +87,9 @@ export class AnalyticsService {
             .select((eb) => [
               'questions.id as questionId',
               'questions.points',
+              'questions.body',
+              'questions.index as index',
+              jsonArrayFrom(eb.selectFrom('student_grading').innerJoin('students', 'students.id', 'student_grading.studentId').select(['student_grading.id', 'students.firstName as firstName', 'students.lastName as lastName', 'student_grading.point', 'student_grading.answer', 'student_grading.submittedAt']).whereRef('student_grading.questionId', '=', 'questions.id')).as('responses'),
               eb.fn.avg(
                 sql`EXTRACT(EPOCH FROM ("student_grading"."submittedAt" - "student_grading"."startedAt"))`
               ).as('averageTimeSpentInSeconds'),
@@ -106,6 +110,7 @@ export class AnalyticsService {
   async getOverallStudentPerformance(studentId: string) {
     const data = await this.db
       .selectFrom('tests')
+      .where('tests.isDeleted', '=', false)
       .innerJoin('test_participants', (join) =>
         join.onRef('test_participants.testId', '=', 'tests.id')
       )

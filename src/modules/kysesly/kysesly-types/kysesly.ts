@@ -10,6 +10,8 @@ export type classes = {
     id: GeneratedAlways<string>;
     name: string;
     teacherId: string;
+    createdAt: Generated<Timestamp>;
+    updatedAt: Generated<Timestamp>;
 };
 export type institutions = {
     id: GeneratedAlways<string>;
@@ -48,6 +50,8 @@ export type student_class = {
     studentId: string;
     classId: string;
     removeAfter: Timestamp;
+    createdAt: Generated<Timestamp>;
+    updatedAt: Generated<Timestamp>;
 };
 export type student_grading = {
     id: GeneratedAlways<string>;
@@ -83,6 +87,8 @@ export type students = {
     firstName: string;
     lastName: string;
     middleName: string | null;
+    createdAt: Generated<Timestamp>;
+    updatedAt: Generated<Timestamp>;
     addedBy: string;
 };
 export type teachers = {
@@ -135,11 +141,10 @@ export type tests = {
     isDeleted: Generated<boolean>;
     isRevoked: Generated<boolean>;
     disableCopyPaste: Generated<boolean | null>;
-    passingScore: Generated<number | null>;
     provideExplanations: Generated<boolean | null>;
     randomizeQuestions: Generated<boolean | null>;
     requireFullScreen: Generated<boolean | null>;
-    showCorrectAnswers: Generated<boolean | null>;
+    showResultsAfterTest: Generated<boolean>;
     teacherId: string;
 };
 export type DB = {

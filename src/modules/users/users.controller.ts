@@ -32,4 +32,10 @@ export class UsersController {
   async findStudentByAccessCode(@Req() req: Request & { student: { accessCode: string } }){
     return await this.usersService.getStudentByAccessCode(req.student.accessCode)
   }
+
+  @Get('recent-activities')
+  @UseGuards(JwtAuthGuard)
+  async getRecentActivities(@Req()  req: Request & {user: {id: string}}) {
+    return await this.usersService.getRecentActivities(req.user.id);
+  }
 }
