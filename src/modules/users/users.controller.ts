@@ -4,6 +4,8 @@ import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CreateStudentDto } from './dto/student.dto';
 import { Request } from 'express';
 import { AccessTokenGuard } from '../../guards/access-token.guard';
+import { OwnerGuard } from '../../guards/owner.guard';
+import CheckOwnership from '../../decorators/check-ownership.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -37,5 +39,11 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   async getRecentActivities(@Req()  req: Request & {user: {id: string}}) {
     return await this.usersService.getRecentActivities(req.user.id);
+  }
+
+  @Get('students')
+  @UseGuards(JwtAuthGuard)
+  async getAllStudents(@Req() req: Request & {user: {id: string}}) {
+    return await this.usersService.getAllStudents(req.user.id);
   }
 }

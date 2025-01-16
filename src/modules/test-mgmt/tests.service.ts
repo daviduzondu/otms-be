@@ -516,8 +516,8 @@ export class TestService {
   async getResponses(testId: string){
     const betterResponses = await this.db
       .selectFrom('students')
-      .innerJoin('test_participants', 'test_participants.studentId', 'students.id')
-      .innerJoin('test_attempts', (join)=> join.onRef('test_attempts.studentId', '=', 'students.id').on((eb) =>
+      .innerJoin('test_participants', join=>join.onRef('test_participants.studentId', '=','students.id').on('test_participants.testId', '=', testId))
+      .innerJoin('test_attempts', (join)=> join.onRef('test_attempts.studentId', '=', 'students.id').on('test_attempts.testId', '=', testId).on((eb) =>
         eb.or([
           eb('test_attempts.endsAt', '<', new Date()),
           eb('test_attempts.status', '=', 'submitted')
@@ -537,7 +537,7 @@ export class TestService {
         jsonArrayFrom(
           eb
             .selectFrom('questions')
-            .leftJoin('student_grading', (join) => join.onRef('student_grading.questionId', '=', 'questions.id').onRef('student_grading.studentId', '=', 'test_participants.studentId').onRef('student_grading.testId', '=', 'test_participants.testId'))
+            .leftJoin('student_grading', (join) => join.onRef('student_grading.questionId', '=', 'questions.id').onRef('student_grading.studentId', '=', 'test_participants.studentId').on('student_grading.testId', '=', testId))
             .where('questions.testId', '=', testId)
             .where((eb) => {
               return eb('questions.isDeleted', '=', false).or('questions.isDeleted', '=', null);

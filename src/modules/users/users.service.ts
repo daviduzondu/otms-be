@@ -100,6 +100,15 @@ export class UsersService {
     return { data:[...recentClasses, ...recentStudents, ...recentTest,...recentQuestions] };
   }
 
+  async getAllStudents(teacherId:string){
+    const data = await this.db.selectFrom('students').selectAll().where('addedBy', '=', teacherId).execute();
+
+    return {
+      message: "Students retrieved sucessfully",
+      data
+    }
+  }
+
   async createStudent(createStudentDto: CreateStudentDto, req) {
     const createStudentDtoClone = structuredClone(createStudentDto);
     const student = await this.db
