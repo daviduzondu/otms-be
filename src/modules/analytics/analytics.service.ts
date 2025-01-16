@@ -49,19 +49,27 @@ export class AnalyticsService {
       .where('tests.teacherId', '=', teacherId)
       .where('tests.isDeleted', '=', false)
       .select((eb) => [
+        eb.selectFrom('test_participants')
+            .where('test_participants.testId', '=', testId)
+            .select(eb.fn.count('id').as("c")).as("totalParticipants"),
         jsonArrayFrom(
           eb
             .selectFrom('students')
-            .leftJoin('test_attempts', (join) => join.onRef('test_attempts.studentId', '=', 'students.id'))
-            .leftJoin('test_participants', 'test_participants.studentId', 'students.id')
+            .innerJoin('test_participants', join=>join.onRef('test_participants.studentId', '=','students.id').on('test_participants.testId', '=', testId))
+            .innerJoin('test_attempts', (join)=> join.onRef('test_attempts.studentId', '=', 'students.id').on('test_attempts.testId', '=', testId).on((eb) =>
+              eb.or([
+                eb('test_attempts.endsAt', '<', new Date()),
+                eb('test_attempts.status', '=', 'submitted')
+              ])))
             .leftJoin('student_grading', 'student_grading.studentId', 'students.id')
+            .where("student_grading.testId", '=', testId)
+            .where('test_attempts.testId', '=', testId)
             .where((eb) =>
               eb.or([
                 eb('test_attempts.endsAt', '<', new Date()),
                 eb('test_attempts.status', '=', 'submitted'),
               ])
             )
-            .where('test_attempts.testId', '=', testId)
             .groupBy(['test_participants.origin', 'students.id', 'students.firstName', 'students.lastName'])
             .select((eb) => [
               jsonObjectFrom(
@@ -89,14 +97,25 @@ export class AnalyticsService {
               'questions.points',
               'questions.body',
               'questions.index as index',
-              jsonArrayFrom(eb.selectFrom('student_grading').innerJoin('students', 'students.id', 'student_grading.studentId').select(['student_grading.id', 'students.firstName as firstName', 'students.lastName as lastName', 'student_grading.point', 'student_grading.answer', 'student_grading.submittedAt']).whereRef('student_grading.questionId', '=', 'questions.id')).as('responses'),
+              jsonArrayFrom(
+                eb.selectFrom('student_grading')
+                  .innerJoin('students', 'students.id', 'student_grading.studentId')
+                  .innerJoin('test_attempts', (join)=> join.onRef('test_attempts.studentId', '=', 'student_grading.studentId').on('test_attempts.testId', '=', testId).on((eb) =>
+                    eb.or([
+                      eb('test_attempts.endsAt', '<', new Date()),
+                      eb('test_attempts.status', '=', 'submitted')
+                    ])))
+                  .select(['student_grading.id', 'students.firstName as firstName', 'students.lastName as lastName', 'student_grading.point', 'student_grading.answer', 'student_grading.submittedAt'])
+                  .where("student_grading.testId", '=', testId)
+                  .where((eb) => eb('student_grading.answer', 'is not', null))
+                  .whereRef('student_grading.questionId', '=', 'questions.id')).as('responses'),
               eb.fn.avg(
                 sql`EXTRACT(EPOCH FROM ("student_grading"."submittedAt" - "student_grading"."startedAt"))`
               ).as('averageTimeSpentInSeconds'),
               eb.fn.count('student_grading.id').as('answerCount'),
             ])
         ).as('questionStats'),
-      ])
+      ]).groupBy('tests.id')
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('Failed to retrieve test metrics', HttpStatus.NOT_FOUND);
       });
