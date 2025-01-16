@@ -180,7 +180,6 @@ export class TestService {
   }
 
   async getAllTests(req: Request) {
-    await new Promise((res) => setTimeout(() => res(null), 1200));
     const tests = await this.db
       .selectFrom('tests')
       .leftJoin('test_participants', 'test_participants.testId', 'tests.id')
