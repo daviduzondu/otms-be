@@ -5,4 +5,4 @@
 
 */
 -- AlterTable
-ALTER TABLE "student_grading" ADD COLUMN     "submittedAt" TIMESTAMP(3) NOT NULL;
+ALTER TABLE "student_grading" ADD COLUMN "submittedAt" TIMESTAMP(3) NOT NULL;
