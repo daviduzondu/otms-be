@@ -25,10 +25,9 @@ export class UsersService {
   async getTeacherProfile({ teacherId, email }: { teacherId?: string; email?: string }) {
     const teacher = await this.db
       .selectFrom('teachers')
-      .leftJoin('institutions', 'teachers.institutionId', 'institutions.id')
       .leftJoin('media', 'media.uploader', 'teachers.id')
       .leftJoin('tests', 'tests.teacherId', 'teachers.id')
-      .select(['teachers.id', 'teachers.firstName', 'teachers.lastName', 'teachers.email', 'teachers.photoId', 'teachers.banned', 'teachers.isEmailVerified', 'teachers.authType', 'tests.id as testId', 'institutions.id as institutionId', 'institutions.name as institutionName', 'media.id as mediaId', 'media.url as mediaUrl'])
+      .select(['teachers.id', 'teachers.firstName', 'teachers.lastName', 'teachers.email', 'teachers.photoId', 'teachers.banned', 'teachers.isEmailVerified', 'teachers.authType', 'tests.id as testId', 'media.id as mediaId', 'media.url as mediaUrl'])
       .where(teacherId ? 'teachers.id' : 'teachers.email', '=', teacherId ?? email)
       .executeTakeFirst();
 
@@ -45,7 +44,6 @@ export class UsersService {
       banned: teacher.banned,
       isEmailVerified: teacher.isEmailVerified,
       authType: teacher.authType,
-      institution: teacher.institutionId ? [{ id: teacher.institutionId, name: teacher.institutionName }] : [],
       uploads: teacher.mediaId ? [{ id: teacher.mediaId, url: teacher.mediaUrl }] : [],
     };
   }
