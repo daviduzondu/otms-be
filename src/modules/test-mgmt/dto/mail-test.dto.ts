@@ -11,7 +11,6 @@ export class SendTestInvitationMailDto {
   students: string[];
 }
 
-
 export class SendTestTokenDto {
   @IsEmail()
   email: string;

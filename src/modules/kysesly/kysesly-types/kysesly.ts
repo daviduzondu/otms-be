@@ -13,13 +13,6 @@ export type classes = {
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
-export type institutions = {
-    id: GeneratedAlways<string>;
-    name: string;
-    logo: string;
-    createdAt: Generated<Timestamp>;
-    updatedAt: Generated<Timestamp>;
-};
 export type media = {
     id: GeneratedAlways<string>;
     type: MediaType;
@@ -35,7 +28,6 @@ export type questions = {
     testId: string;
     type: QuestionType;
     options: string[];
-    timeLimit: number | null;
     correctAnswer: string | null;
     body: string;
     mediaId: string | null;
@@ -44,6 +36,7 @@ export type questions = {
     points: Generated<number>;
     isDeleted: Generated<boolean>;
     index: Generated<number>;
+    timeLimit: number | null;
 };
 export type student_class = {
     id: GeneratedAlways<string>;
@@ -58,15 +51,15 @@ export type student_grading = {
     studentId: string;
     questionId: string;
     testId: string;
-    answer: string | null;
     isTouched: Generated<boolean>;
     point: number | null;
-    autoGraded: Generated<boolean>;
-    isWithinTime: boolean | null;
-    submittedAt: Timestamp | null;
-    startedAt: Timestamp | null;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
+    startedAt: Timestamp | null;
+    answer: string | null;
+    isWithinTime: boolean | null;
+    autoGraded: Generated<boolean>;
+    submittedAt: Timestamp | null;
 };
 export type student_tokens = {
     id: GeneratedAlways<string>;
@@ -76,10 +69,6 @@ export type student_tokens = {
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
-export type StudentClasses = {
-    A: string;
-    B: string;
-};
 export type students = {
     id: GeneratedAlways<string>;
     email: string;
@@ -87,9 +76,9 @@ export type students = {
     firstName: string;
     lastName: string;
     middleName: string | null;
+    addedBy: string;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
-    addedBy: string;
 };
 export type teachers = {
     id: GeneratedAlways<string>;
@@ -101,7 +90,6 @@ export type teachers = {
     banned: Generated<boolean | null>;
     isEmailVerified: Generated<boolean | null>;
     authType: AuthType | null;
-    institutionId: string | null;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
 };
@@ -111,31 +99,29 @@ export type test_attempts = {
     studentId: string;
     questions: string[];
     startedAt: Timestamp;
-    submittedAt: Timestamp | null;
     endsAt: Timestamp;
-    currentQuestionId: string;
     status: Generated<AttemptStatus>;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
+    currentQuestionId: string;
+    submittedAt: Timestamp | null;
 };
 export type test_participants = {
     id: GeneratedAlways<string>;
     studentId: string;
     testId: string;
+    createdAt: Generated<Timestamp>;
+    updatedAt: Generated<Timestamp>;
     origin: string | null;
     graded: Generated<boolean>;
     isTouched: Generated<boolean>;
-    createdAt: Generated<Timestamp>;
-    updatedAt: Generated<Timestamp>;
 };
 export type tests = {
     id: GeneratedAlways<string>;
-    institutionId: string | null;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
     code: string | null;
     printCount: number | null;
-    durationMin: Generated<number>;
     instructions: string | null;
     title: string;
     isDeleted: Generated<boolean>;
@@ -144,13 +130,12 @@ export type tests = {
     provideExplanations: Generated<boolean | null>;
     randomizeQuestions: Generated<boolean | null>;
     requireFullScreen: Generated<boolean | null>;
-    showResultsAfterTest: Generated<boolean>;
     teacherId: string;
+    durationMin: Generated<number>;
+    showResultsAfterTest: Generated<boolean>;
 };
 export type DB = {
-    _StudentClasses: StudentClasses;
     classes: classes;
-    institutions: institutions;
     media: media;
     questions: questions;
     student_class: student_class;

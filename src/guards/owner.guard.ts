@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, HttpStatus, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { InjectKysesly } from '../modules/kysesly/decorators/inject-repository';
 import { Database } from '../modules/kysesly/database';
@@ -33,10 +28,7 @@ export class OwnerGuard implements CanActivate {
       .where(column, '=', req[pathOnReq[0]][pathOnReq[1]])
       .where(foreignKey, '=', (req.user as any).id)
       .executeTakeFirstOrThrow(() => {
-        throw new CustomException(
-          'You do not have access to this resource or it does not exist.',
-          HttpStatus.NOT_FOUND,
-        );
+        throw new CustomException('You do not have access to this resource or it does not exist.', HttpStatus.NOT_FOUND);
       });
     return true;
   }

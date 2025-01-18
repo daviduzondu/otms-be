@@ -1,12 +1,5 @@
 import { Exclude } from 'class-transformer';
-import {
-  IsBoolean,
-  IsDateString,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Matches, Max, Min,
-} from 'class-validator';
+import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
 
 export class CreateTestDto {
   @IsOptional()
@@ -18,12 +11,12 @@ export class CreateTestDto {
     message: 'Title can only contain letters, numbers, and spaces',
   })
   title: string;
-    //
-    // @IsDateString()
-    // startsAt: string;
-    //
-    // @IsDateString()
-    // endsAt: string;
+  //
+  // @IsDateString()
+  // startsAt: string;
+  //
+  // @IsDateString()
+  // endsAt: string;
 
   @IsOptional()
   @IsString()

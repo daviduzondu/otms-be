@@ -47,7 +47,7 @@ export class ClassService {
         'regNumber',
         'students.id as studentId',
         sql`CASE WHEN test_participants.id IS NOT NULL THEN TRUE ELSE FALSE END`.as('isParticipant'),
-        'test_participants.origin as origin'
+        'test_participants.origin as origin',
       ])
       .where('teacherId', '=', (req as any).user.id)
       .execute();

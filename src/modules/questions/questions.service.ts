@@ -37,7 +37,7 @@ export class QuestionsService {
         }),
       )
       .returningAll()
-      .returning((eb)=>[jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
+      .returning((eb) => [jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
       .executeTakeFirst();
 
     // await this.db.updateTable('tests').set('updatedAt', question.updatedAt).where('tests.id', '=', question.testId).execute()
@@ -59,11 +59,10 @@ export class QuestionsService {
       .set(payload as any)
       .where('id', '=', questionId)
       .returningAll()
-      .returning((eb)=>[jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
+      .returning((eb) => [jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
       .executeTakeFirst();
 
     // await this.db.updateTable('tests').set('updatedAt', question.updatedAt).where('tests.id', '=', question.testId).execute()
-
 
     return {
       message: 'Question edited successfully',
@@ -109,16 +108,16 @@ export class QuestionsService {
     };
   }
 
-  async removeMedia(questionId:string, mediaId: string, testId: string) {
+  async removeMedia(questionId: string, mediaId: string, testId: string) {
     const existingAttempt = await this.db.selectFrom('test_attempts').selectAll().where('testId', '=', testId).executeTakeFirst();
     if (existingAttempt) {
       throw new CustomException('You cannot make any changes because one or more students have attempted this test', HttpStatus.CONFLICT);
     }
 
-    await this.db.updateTable('questions').set('mediaId', null).where('id','=', questionId).where('mediaId', '=', mediaId).execute();
+    await this.db.updateTable('questions').set('mediaId', null).where('id', '=', questionId).where('mediaId', '=', mediaId).execute();
 
     return {
-      message: "Media removed successfully",
-    }
+      message: 'Media removed successfully',
+    };
   }
 }

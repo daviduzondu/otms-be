@@ -1,4 +1,4 @@
-import {StorageEngine} from 'multer';
+import { StorageEngine } from 'multer';
 import * as path from 'path';
 import e from 'express';
 import { FirebaseService } from '../../firebase/firebase.service';
@@ -10,11 +10,13 @@ interface FirebaseStorageOptions {
   destination: string;
 }
 
-
 export class FirebaseStorageEngine implements StorageEngine {
   private readonly destination: string;
   private bucket: any;
-  constructor(private readonly firebaseService: FirebaseService, options: FirebaseStorageOptions) {
+  constructor(
+    private readonly firebaseService: FirebaseService,
+    options: FirebaseStorageOptions,
+  ) {
     this.destination = options.destination || '';
     this.bucket = this.firebaseService.firebaseApp.storage().bucket();
   }
@@ -35,7 +37,8 @@ export class FirebaseStorageEngine implements StorageEngine {
       return;
     }
 
-    file.stream.pipe(blobStream)
+    file.stream
+      .pipe(blobStream)
       .on('finish', async () => {
         // Generate signed URL for the uploaded file
         const [signedUrl] = await fileUpload.getSignedUrl({
@@ -57,7 +60,8 @@ export class FirebaseStorageEngine implements StorageEngine {
   _removeFile(req: e.Request, file: Express.Multer.File, cb: (error?: any) => void) {
     const blob = this.bucket.file(file.filename);
 
-    blob.delete()
+    blob
+      .delete()
       .then(() => cb(null))
       .catch((err) => cb(err));
   }

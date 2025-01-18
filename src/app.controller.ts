@@ -15,7 +15,7 @@ export class AppController {
   }
 
   @Get('server-time')
-  getServerTime(){
+  getServerTime() {
     return new Date().toISOString();
   }
 

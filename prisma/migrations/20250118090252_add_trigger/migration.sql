@@ -17,10 +17,6 @@ BEFORE UPDATE ON "classes"
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
 
-CREATE TRIGGER update_tests_updated_at_institutions
-BEFORE UPDATE ON "institutions"
-FOR EACH ROW
-EXECUTE FUNCTION update_timestamp();
 
 CREATE TRIGGER update_tests_updated_at_media
 BEFORE UPDATE ON "media"

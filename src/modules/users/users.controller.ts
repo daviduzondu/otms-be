@@ -31,19 +31,19 @@ export class UsersController {
 
   @Get('verify-student')
   @UseGuards(AccessTokenGuard)
-  async findStudentByAccessCode(@Req() req: Request & { student: { accessCode: string } }){
-    return await this.usersService.getStudentByAccessCode(req.student.accessCode)
+  async findStudentByAccessCode(@Req() req: Request & { student: { accessCode: string } }) {
+    return await this.usersService.getStudentByAccessCode(req.student.accessCode);
   }
 
   @Get('recent-activities')
   @UseGuards(JwtAuthGuard)
-  async getRecentActivities(@Req()  req: Request & {user: {id: string}}) {
+  async getRecentActivities(@Req() req: Request & { user: { id: string } }) {
     return await this.usersService.getRecentActivities(req.user.id);
   }
 
   @Get('students')
   @UseGuards(JwtAuthGuard)
-  async getAllStudents(@Req() req: Request & {user: {id: string}}) {
+  async getAllStudents(@Req() req: Request & { user: { id: string } }) {
     return await this.usersService.getAllStudents(req.user.id);
   }
 }

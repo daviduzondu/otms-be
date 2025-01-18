@@ -1,15 +1,4 @@
-import {
-  ArrayNotEmpty,
-  IsArray,
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Validate,
-  ValidateIf,
-} from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Validate, ValidateIf } from 'class-validator';
 import { QuestionType } from '../../kysesly/kysesly-types/enums';
 import { CustomIsInArray } from '../../../validators/options-validator';
 

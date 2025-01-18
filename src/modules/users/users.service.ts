@@ -50,18 +50,24 @@ export class UsersService {
     };
   }
 
-  async getRecentActivities(teacherId:string, limit: number = 5) {
-   const recentClasses = await this.db.selectFrom('classes').selectAll()
-     .select(eb=>[eb.case().when('classes.updatedAt', '=', eb.ref('classes.createdAt')).then('new_class').else('update_class').end().as('type')])
-     .where('classes.teacherId', '=', teacherId)
-     .limit(limit)
-     .orderBy('updatedAt desc').execute();
+  async getRecentActivities(teacherId: string, limit: number = 5) {
+    const recentClasses = await this.db
+      .selectFrom('classes')
+      .selectAll()
+      .select((eb) => [eb.case().when('classes.updatedAt', '=', eb.ref('classes.createdAt')).then('new_class').else('update_class').end().as('type')])
+      .where('classes.teacherId', '=', teacherId)
+      .limit(limit)
+      .orderBy('updatedAt desc')
+      .execute();
 
-   const recentStudents = await this.db.selectFrom('students').selectAll()
-     .select(eb=>[eb.case().when('students.updatedAt', '=', eb.ref('students.createdAt')).then('new_student').else('update_student').end().as('type')])
-     .where('students.addedBy', '=', teacherId)
-     .limit(limit)
-     .orderBy('updatedAt desc').execute();
+    const recentStudents = await this.db
+      .selectFrom('students')
+      .selectAll()
+      .select((eb) => [eb.case().when('students.updatedAt', '=', eb.ref('students.createdAt')).then('new_student').else('update_student').end().as('type')])
+      .where('students.addedBy', '=', teacherId)
+      .limit(limit)
+      .orderBy('updatedAt desc')
+      .execute();
 
     const recentTest = await this.db
       .selectFrom('tests')
@@ -74,39 +80,33 @@ export class UsersService {
           .when(
             eb.or([
               eb('tests.updatedAt', '>', eb.ref('tests.createdAt')), // Test was updated
-            ])
+            ]),
           )
           .then('update_test')
           .else('new_test')
           .end()
-          .as('type')
+          .as('type'),
       ])
       .where('tests.teacherId', '=', teacherId)
       .orderBy('tests.updatedAt', 'desc')
       .execute();
 
-    const recentQuestions = await this.db.selectFrom('questions')
-      .innerJoin('tests', join=>join.on('tests.teacherId','=',teacherId).onRef('tests.id' ,'=', 'questions.testId'))
-      .select((eb)=>[
-        'tests.id as testId',
-        'tests.title as title',
-        'questions.createdAt as createdAt',
-        'questions.updatedAt as createdAt',
-        'questions.id',
-        eb.case().when('questions.createdAt', '=', eb.ref('questions.updatedAt')).then('new_question').else('update_question').end().as('type')
-      ])
+    const recentQuestions = await this.db
+      .selectFrom('questions')
+      .innerJoin('tests', (join) => join.on('tests.teacherId', '=', teacherId).onRef('tests.id', '=', 'questions.testId'))
+      .select((eb) => ['tests.id as testId', 'tests.title as title', 'questions.createdAt as createdAt', 'questions.updatedAt as createdAt', 'questions.id', eb.case().when('questions.createdAt', '=', eb.ref('questions.updatedAt')).then('new_question').else('update_question').end().as('type')])
       .execute();
 
-    return { data:[...recentClasses, ...recentStudents, ...recentTest,...recentQuestions] };
+    return { data: [...recentClasses, ...recentStudents, ...recentTest, ...recentQuestions] };
   }
 
-  async getAllStudents(teacherId:string){
+  async getAllStudents(teacherId: string) {
     const data = await this.db.selectFrom('students').selectAll().where('addedBy', '=', teacherId).execute();
 
     return {
-      message: "Students retrieved sucessfully",
-      data
-    }
+      message: 'Students retrieved sucessfully',
+      data,
+    };
   }
 
   async createStudent(createStudentDto: CreateStudentDto, req) {
@@ -150,14 +150,22 @@ export class UsersService {
     };
   }
 
-  async getStudentByAccessCode(accessCode: string ){
-    const student = await this.db.selectFrom('students').innerJoin('student_tokens','student_tokens.studentId','students.id').innerJoin('test_participants', 'test_participants.studentId', 'student_tokens.studentId').innerJoin('tests', 'tests.id', 'student_tokens.testId').where('student_tokens.accessCode', '=', accessCode).selectAll('students').select((eb)=>['test_participants.isTouched as isTouched', jsonObjectFrom(eb.selectFrom('tests').where('tests.isDeleted', '=', false).whereRef('tests.id', '=', 'student_tokens.testId').selectAll()).as("testInfo")]).executeTakeFirstOrThrow(()=>{
-      throw new CustomException("Failed to retrieve student information. Contact teacher for help.", HttpStatus.NOT_FOUND)
-    });
+  async getStudentByAccessCode(accessCode: string) {
+    const student = await this.db
+      .selectFrom('students')
+      .innerJoin('student_tokens', 'student_tokens.studentId', 'students.id')
+      .innerJoin('test_participants', 'test_participants.studentId', 'student_tokens.studentId')
+      .innerJoin('tests', 'tests.id', 'student_tokens.testId')
+      .where('student_tokens.accessCode', '=', accessCode)
+      .selectAll('students')
+      .select((eb) => ['test_participants.isTouched as isTouched', jsonObjectFrom(eb.selectFrom('tests').where('tests.isDeleted', '=', false).whereRef('tests.id', '=', 'student_tokens.testId').selectAll()).as('testInfo')])
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException('Failed to retrieve student information. Contact teacher for help.', HttpStatus.NOT_FOUND);
+      });
 
     return {
-      message: "Student found",
+      message: 'Student found',
       data: student,
-    }
+    };
   }
 }

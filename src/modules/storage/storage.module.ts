@@ -17,14 +17,17 @@ import { ConfigService } from '@nestjs/config';
         limits: {
           fileSize: 1024 * 2 * 1024, // 2MB limit
         },
-        storage: configService.get("STORAGE_MODE") === "remote" ? new FirebaseStorageEngine(firebaseService, {destination:"uploads"}) : diskStorage({
-                 destination: 'uploads',
-                 filename: (req, file, cb) => {
-                   const filename = `${Date.now()}-${file.originalname}`;
-                   if (!['image/jpeg', 'image/jpg', 'image/png', 'audio/mpeg', 'video/mp4'].includes(file.mimetype)) cb(new CustomException('File type not supported', HttpStatus.UNPROCESSABLE_ENTITY), null);
-                   else cb(null, filename);
-                 },
-               }),
+        storage:
+          configService.get('STORAGE_MODE') === 'remote'
+            ? new FirebaseStorageEngine(firebaseService, { destination: 'uploads' })
+            : diskStorage({
+                destination: 'uploads',
+                filename: (req, file, cb) => {
+                  const filename = `${Date.now()}-${file.originalname}`;
+                  if (!['image/jpeg', 'image/jpg', 'image/png', 'audio/mpeg', 'video/mp4'].includes(file.mimetype)) cb(new CustomException('File type not supported', HttpStatus.UNPROCESSABLE_ENTITY), null);
+                  else cb(null, filename);
+                },
+              }),
       }),
     }),
   ],

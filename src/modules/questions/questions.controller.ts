@@ -61,7 +61,7 @@ export class QuestionsController {
     pathOnReq: ['body', 'testId'],
   })
   @Patch(':questionId/remove-media')
-  async removeMedia(@Param('questionId', ParseUUIDPipe) questionId: string,  @Body() { mediaId, testId }: RemoveMediaDto) {
-    return await this.questionsService.removeMedia(questionId, mediaId, testId)
+  async removeMedia(@Param('questionId', ParseUUIDPipe) questionId: string, @Body() { mediaId, testId }: RemoveMediaDto) {
+    return await this.questionsService.removeMedia(questionId, mediaId, testId);
   }
 }

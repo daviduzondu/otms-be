@@ -49,37 +49,23 @@ export class AnalyticsService {
       .where('tests.teacherId', '=', teacherId)
       .where('tests.isDeleted', '=', false)
       .select((eb) => [
-        eb.selectFrom('test_participants')
-            .where('test_participants.testId', '=', testId)
-            .select(eb.fn.count('id').as("c")).as("totalParticipants"),
+        eb.selectFrom('test_participants').where('test_participants.testId', '=', testId).select(eb.fn.count('id').as('c')).as('totalParticipants'),
         jsonArrayFrom(
           eb
             .selectFrom('students')
-            .innerJoin('test_participants', join=>join.onRef('test_participants.studentId', '=','students.id').on('test_participants.testId', '=', testId))
-            .innerJoin('test_attempts', (join)=> join.onRef('test_attempts.studentId', '=', 'students.id').on('test_attempts.testId', '=', testId).on((eb) =>
-              eb.or([
-                eb('test_attempts.endsAt', '<', new Date()),
-                eb('test_attempts.status', '=', 'submitted')
-              ])))
-            .leftJoin('student_grading', 'student_grading.studentId', 'students.id')
-            .where("student_grading.testId", '=', testId)
-            .where('test_attempts.testId', '=', testId)
-            .where((eb) =>
-              eb.or([
-                eb('test_attempts.endsAt', '<', new Date()),
-                eb('test_attempts.status', '=', 'submitted'),
-              ])
+            .innerJoin('test_participants', (join) => join.onRef('test_participants.studentId', '=', 'students.id').on('test_participants.testId', '=', testId))
+            .innerJoin('test_attempts', (join) =>
+              join
+                .onRef('test_attempts.studentId', '=', 'students.id')
+                .on('test_attempts.testId', '=', testId)
+                .on((eb) => eb.or([eb('test_attempts.endsAt', '<', new Date()), eb('test_attempts.status', '=', 'submitted')])),
             )
+            .leftJoin('student_grading', 'student_grading.studentId', 'students.id')
+            .where('student_grading.testId', '=', testId)
+            .where('test_attempts.testId', '=', testId)
+            .where((eb) => eb.or([eb('test_attempts.endsAt', '<', new Date()), eb('test_attempts.status', '=', 'submitted')]))
             .groupBy(['test_participants.origin', 'students.id', 'students.firstName', 'students.lastName'])
-            .select((eb) => [
-              jsonObjectFrom(
-                eb.selectFrom('classes').whereRef('classes.id', '=', 'test_participants.origin').selectAll()
-              ).as('class'),
-              'students.id as id',
-              'students.firstName as firstName',
-              'students.lastName as lastName',
-              eb.fn.sum('student_grading.point').as('totalPoints'),
-            ])
+            .select((eb) => [jsonObjectFrom(eb.selectFrom('classes').whereRef('classes.id', '=', 'test_participants.origin').selectAll()).as('class'), 'students.id as id', 'students.firstName as firstName', 'students.lastName as lastName', eb.fn.sum('student_grading.point').as('totalPoints')]),
         ).as('attempts'),
         jsonArrayFrom(
           eb
@@ -88,9 +74,7 @@ export class AnalyticsService {
             .where((eb) => eb.or([eb('questions.isDeleted', '=', false), eb('questions.isDeleted', '=', null)]))
             .where('questions.testId', '=', testId)
             .where((eb) => eb('student_grading.answer', 'is not', null))
-            .where((eb) =>
-              eb.and([eb('student_grading.startedAt', 'is not', null), eb('student_grading.submittedAt', 'is not', null)])
-            )
+            .where((eb) => eb.and([eb('student_grading.startedAt', 'is not', null), eb('student_grading.submittedAt', 'is not', null)]))
             .groupBy(['questions.id', 'questions.points'])
             .select((eb) => [
               'questions.id as questionId',
@@ -98,54 +82,51 @@ export class AnalyticsService {
               'questions.body',
               'questions.index as index',
               jsonArrayFrom(
-                eb.selectFrom('student_grading')
+                eb
+                  .selectFrom('student_grading')
                   .innerJoin('students', 'students.id', 'student_grading.studentId')
-                  .innerJoin('test_attempts', (join)=> join.onRef('test_attempts.studentId', '=', 'student_grading.studentId').on('test_attempts.testId', '=', testId).on((eb) =>
-                    eb.or([
-                      eb('test_attempts.endsAt', '<', new Date()),
-                      eb('test_attempts.status', '=', 'submitted')
-                    ])))
+                  .innerJoin('test_attempts', (join) =>
+                    join
+                      .onRef('test_attempts.studentId', '=', 'student_grading.studentId')
+                      .on('test_attempts.testId', '=', testId)
+                      .on((eb) => eb.or([eb('test_attempts.endsAt', '<', new Date()), eb('test_attempts.status', '=', 'submitted')])),
+                  )
                   .select(['student_grading.id', 'students.firstName as firstName', 'students.lastName as lastName', 'student_grading.point', 'student_grading.answer', 'student_grading.submittedAt'])
-                  .where("student_grading.testId", '=', testId)
+                  .where('student_grading.testId', '=', testId)
                   .where((eb) => eb('student_grading.answer', 'is not', null))
-                  .whereRef('student_grading.questionId', '=', 'questions.id')).as('responses'),
-              eb.fn.avg(
-                sql`EXTRACT(EPOCH FROM ("student_grading"."submittedAt" - "student_grading"."startedAt"))`
-              ).as('averageTimeSpentInSeconds'),
+                  .whereRef('student_grading.questionId', '=', 'questions.id'),
+              ).as('responses'),
+              eb.fn.avg(sql`EXTRACT(EPOCH FROM ("student_grading"."submittedAt" - "student_grading"."startedAt"))`).as('averageTimeSpentInSeconds'),
               eb.fn.count('student_grading.id').as('answerCount'),
-            ])
+            ]),
         ).as('questionStats'),
-      ]).groupBy('tests.id')
+      ])
+      .groupBy('tests.id')
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('Failed to retrieve test metrics', HttpStatus.NOT_FOUND);
       });
 
     return {
-      message: "Test metrics retrieve successfully", 
-      data: newData
-    }
+      message: 'Test metrics retrieve successfully',
+      data: newData,
+    };
   }
 
   async getOverallStudentPerformance(studentId: string) {
     const data = await this.db
       .selectFrom('tests')
       .where('tests.isDeleted', '=', false)
-      .innerJoin('test_participants', (join) =>
-        join.onRef('test_participants.testId', '=', 'tests.id')
-      )
-      .innerJoin('student_grading', (join)=> join.onRef('student_grading.testId', '=', 'tests.id'))
+      .innerJoin('test_participants', (join) => join.onRef('test_participants.testId', '=', 'tests.id'))
+      .innerJoin('student_grading', (join) => join.onRef('student_grading.testId', '=', 'tests.id'))
       .where('test_participants.studentId', '=', studentId) // Filter by the student's ID
       .selectAll('tests') // Select all columns from the "tests" table
-      .select(eb=>[
-        eb.fn.sum('student_grading.point').as('totalPoints'),
-      ])
+      .select((eb) => [eb.fn.sum('student_grading.point').as('totalPoints')])
       .groupBy('tests.id')
       .execute();
 
     return {
-      message: "Student overall performance retrieved",
-      data
-    }
+      message: 'Student overall performance retrieved',
+      data,
+    };
   }
-
 }

@@ -26,20 +26,20 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
   imports: [
     PassportModule,
     ServeStaticModule.forRoot({
-      rootPath: path.join(process.cwd(),'uploads'),
-      serveRoot:"/uploads"
+      rootPath: path.join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
     }),
     ConfigModule.forRoot({
       cache: true,
       isGlobal: true,
       envFilePath: ['.env.development', '.env'],
-validationSchema : Joi.object({
+      validationSchema: Joi.object({
         DATABASE_URL: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
         PORT: Joi.number().required(),
         BREVO_API_KEY: Joi.string().required(),
         FRONTEND_BASE_URL: Joi.string().required(),
-        STORAGE_MODE: Joi.string().valid('remote', 'local').required()
+        STORAGE_MODE: Joi.string().valid('remote', 'local').required(),
 
         // Conditional validation for production environment
       }).when(Joi.object({ STORAGE_MODE: Joi.string().valid('remote') }).unknown(), {
@@ -56,7 +56,7 @@ validationSchema : Joi.object({
           CLIENT_X509_CERT_URL: Joi.string().required(),
           UNIVERSE_DOMAIN: Joi.string().required(),
         }),
-      })
+      }),
     }),
     JwtModule.register({
       global: true,
@@ -72,7 +72,7 @@ validationSchema : Joi.object({
     ClassModule,
     StorageModule,
     FirebaseModule,
-    AnalyticsModule
+    AnalyticsModule,
   ],
   controllers: [AppController],
 

@@ -35,13 +35,11 @@ export class TestService {
     return customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 12)();
   }
 
-
   async createNewTest(payload: CreateTestDto, req: Request) {
     Object.assign(payload, {
       code: await this.generateTestCode(),
       teacherId: (req as any).user.id,
     } as tests);
-
 
     const test = await this.db.insertInto('tests').values(payload).returningAll().executeTakeFirst();
 
@@ -184,7 +182,7 @@ export class TestService {
       .selectFrom('tests')
       .leftJoin('test_participants', 'test_participants.testId', 'tests.id')
       .selectAll('tests')
-      .select(eb=>[eb.fn.count('test_participants.id').as('participantCount')])
+      .select((eb) => [eb.fn.count('test_participants.id').as('participantCount')])
       .groupBy('tests.id')
       .where('teacherId', '=', (req.user as any).id)
       .where('tests.isDeleted', '=', false)
@@ -210,7 +208,7 @@ export class TestService {
     const questions = await this.db
       .selectFrom('questions')
       .selectAll('questions') // Select all fields from 'questions'
-      .select((eb)=>[jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
+      .select((eb) => [jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
       .where('testId', '=', id)
       .where((eb) => {
         return eb('isDeleted', '=', false).or('isDeleted', '=', null);
@@ -234,17 +232,12 @@ export class TestService {
         .where('questions.id', '=', questionId)
         .where((eb) => eb('isDeleted', '=', false).or('isDeleted', '=', null))
         .where('testId', '=', testId)
-        .select((eb)=>[jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media'), 'body', 'mediaId', 'options', 'points', 'timeLimit', 'type', 'id'])
+        .select((eb) => [jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media'), 'body', 'mediaId', 'options', 'points', 'timeLimit', 'type', 'id'])
         .executeTakeFirstOrThrow(() => {
           throw new CustomException(`Question with id ${questionId} for test ${testId} not found!`);
         });
 
-      await trx
-        .updateTable('test_attempts')
-        .set({ currentQuestionId: questionId })
-        .where('test_attempts.studentId', '=', studentId)
-        .where('test_attempts.testId', '=', testId)
-        .executeTakeFirst();
+      await trx.updateTable('test_attempts').set({ currentQuestionId: questionId }).where('test_attempts.studentId', '=', studentId).where('test_attempts.testId', '=', testId).executeTakeFirst();
 
       const { startedAt } = await trx
         .insertInto('student_grading')
@@ -259,7 +252,7 @@ export class TestService {
           oc.columns(['questionId', 'testId', 'studentId']).doUpdateSet({
             startedAt: new Date(),
             isTouched: true,
-          })
+          }),
         )
         .returningAll()
         .executeTakeFirst();
@@ -293,13 +286,13 @@ export class TestService {
     const endsAt = new Date(testAttempt.endsAt);
     const now = new Date();
 
-// Validate test attempt
+    // Validate test attempt
     if (testAttempt.status === 'submitted') {
       throw new CustomException("You've already made a submission", HttpStatus.METHOD_NOT_ALLOWED);
     }
 
     if (now > endsAt) {
-      throw new CustomException("The test attempt has already ended", HttpStatus.METHOD_NOT_ALLOWED);
+      throw new CustomException('The test attempt has already ended', HttpStatus.METHOD_NOT_ALLOWED);
     }
     // Retrieve question
     const question = await this.db
@@ -321,11 +314,7 @@ export class TestService {
       submittedAt: new Date(),
       isWithinTime: question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) : this.isWithinTime(testAttempt.startedAt, testAttempt.durationMin + 2),
       autoGraded: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type),
-      point: (['mcq', 'trueOrFalse'] as QuestionType[]).includes(question.type)
-        ? String(answer) === question?.correctAnswer
-          ? question.points
-          : 0
-        : null
+      point: (['mcq', 'trueOrFalse'] as QuestionType[]).includes(question.type) ? (String(answer) === question?.correctAnswer ? question.points : 0) : null,
     };
 
     // console.log({ ...payload, answer });
@@ -345,7 +334,7 @@ export class TestService {
           ...Object.assign(payload, {
             answer: payload.isWithinTime ? answer : submission.answer,
             point: payload.isWithinTime ? payload.point : submission.point,
-            submittedAt: payload.isWithinTime ? payload.submittedAt : submission.submittedAt
+            submittedAt: payload.isWithinTime ? payload.submittedAt : submission.submittedAt,
           }),
         }),
       )
@@ -354,7 +343,7 @@ export class TestService {
 
     return {
       message: payload.isWithinTime ? 'Answer submitted successfully' : 'Submitted, but late submission.',
-      data: {...result,serverTime: new Date().toISOString() },
+      data: { ...result, serverTime: new Date().toISOString() },
       // serverTime: new Date().toISOString()
     };
   }
@@ -394,8 +383,7 @@ export class TestService {
         throw new CustomException('Failed to retrieve details. Is the access token correct?', HttpStatus.NOT_FOUND);
       });
 
-    await this.db.updateTable('test_participants').set({isTouched: true}).where('studentId', '=', studentId).where('testId', '=', testId).execute();
-
+    await this.db.updateTable('test_participants').set({ isTouched: true }).where('studentId', '=', studentId).where('testId', '=', testId).execute();
 
     // Retrieve the test associated with that access code.
     const test = await this.db
@@ -474,12 +462,15 @@ export class TestService {
       });
 
     // Get the students
-    const results = await this.db.selectFrom('students')
-      .leftJoin('test_attempts',
-        (join)=>join.onRef('test_attempts.studentId', '=', 'students.id')
-          .on('test_attempts.testId', '=', testId)).leftJoin('student_tokens', 'student_tokens.studentId', 'students.id')
-      .selectAll().where('test_attempts.studentId', 'is', null)
-      .where('students.id', 'in', students).where('student_tokens.testId', '=', testId).execute();
+    const results = await this.db
+      .selectFrom('students')
+      .leftJoin('test_attempts', (join) => join.onRef('test_attempts.studentId', '=', 'students.id').on('test_attempts.testId', '=', testId))
+      .leftJoin('student_tokens', 'student_tokens.studentId', 'students.id')
+      .selectAll()
+      .where('test_attempts.studentId', 'is', null)
+      .where('students.id', 'in', students)
+      .where('student_tokens.testId', '=', testId)
+      .execute();
 
     if (results.length === 0) {
       throw new CustomException('Some students in this list do not exist', HttpStatus.NOT_FOUND);
@@ -513,24 +504,19 @@ export class TestService {
     };
   }
 
-  async getResponses(testId: string){
+  async getResponses(testId: string) {
     const betterResponses = await this.db
       .selectFrom('students')
-      .innerJoin('test_participants', join=>join.onRef('test_participants.studentId', '=','students.id').on('test_participants.testId', '=', testId))
-      .innerJoin('test_attempts', (join)=> join.onRef('test_attempts.studentId', '=', 'students.id').on('test_attempts.testId', '=', testId).on((eb) =>
-        eb.or([
-          eb('test_attempts.endsAt', '<', new Date()),
-          eb('test_attempts.status', '=', 'submitted')
-        ])))
+      .innerJoin('test_participants', (join) => join.onRef('test_participants.studentId', '=', 'students.id').on('test_participants.testId', '=', testId))
+      .innerJoin('test_attempts', (join) =>
+        join
+          .onRef('test_attempts.studentId', '=', 'students.id')
+          .on('test_attempts.testId', '=', testId)
+          .on((eb) => eb.or([eb('test_attempts.endsAt', '<', new Date()), eb('test_attempts.status', '=', 'submitted')])),
+      )
       .selectAll('students')
       .select((eb) => [
-        eb
-          .selectFrom('test_attempts')
-          .select(eb.fn.count<number>('test_attempts.id').as('c'))
-          .whereRef('test_attempts.testId', '=', 'test_participants.testId')
-          .where('test_attempts.endsAt', '>', new Date())
-          .where("test_attempts.status", '=', 'unsubmitted')
-          .as('pendingSubmissionsCount'),
+        eb.selectFrom('test_attempts').select(eb.fn.count<number>('test_attempts.id').as('c')).whereRef('test_attempts.testId', '=', 'test_participants.testId').where('test_attempts.endsAt', '>', new Date()).where('test_attempts.status', '=', 'unsubmitted').as('pendingSubmissionsCount'),
         'test_attempts.startedAt',
         'test_attempts.endsAt',
         'test_attempts.submittedAt',
@@ -542,17 +528,25 @@ export class TestService {
             .where((eb) => {
               return eb('questions.isDeleted', '=', false).or('questions.isDeleted', '=', null);
             })
-            .select(({ eb }) =>
-              ['questions.id as questionId', 'questions.body', 'questions.options', 'questions.correctAnswer', 'questions.type', 'questions.points as maxPoints', 'student_grading.autoGraded',
-                'student_grading.startedAt', 'student_grading.isTouched', 'questions.index', 'student_grading.answer', 'student_grading.point',
-                'student_grading.isWithinTime', 'student_grading.id',
-                // eb.case().when('questions.type', 'in',['mcq', 'trueOrFalse']).then(eb.case().when('student_grading.point', 'is', null).then(0).end()).end().as('point'),
-              ]),
+            .select(({ eb }) => [
+              'questions.id as questionId',
+              'questions.body',
+              'questions.options',
+              'questions.correctAnswer',
+              'questions.type',
+              'questions.points as maxPoints',
+              'student_grading.autoGraded',
+              'student_grading.startedAt',
+              'student_grading.isTouched',
+              'questions.index',
+              'student_grading.answer',
+              'student_grading.point',
+              'student_grading.isWithinTime',
+              'student_grading.id',
+              // eb.case().when('questions.type', 'in',['mcq', 'trueOrFalse']).then(eb.case().when('student_grading.point', 'is', null).then(0).end()).end().as('point'),
+            ]),
         ).as('answers'),
-        jsonArrayFrom(eb.selectFrom('media')
-          .where('media.testId', '=', testId)
-          .whereRef('media.studentId', '=', 'students.id')
-          .select(['media.id as id', 'url', 'media.type as type', 'media.createdAt as timestamp'])).as("webcamCaptures")
+        jsonArrayFrom(eb.selectFrom('media').where('media.testId', '=', testId).whereRef('media.studentId', '=', 'students.id').select(['media.id as id', 'url', 'media.type as type', 'media.createdAt as timestamp'])).as('webcamCaptures'),
       ])
       .where('test_participants.testId', '=', testId)
       .execute();
@@ -564,17 +558,23 @@ export class TestService {
 
     return {
       message: `Submissions for test: ${testId}`,
-      data: betterResponses.map(response => (Object.assign(response, { completed: false, pendingSubmissionsCount: Number(response.pendingSubmissionsCount)}))),
+      data: betterResponses.map((response) => Object.assign(response, { completed: false, pendingSubmissionsCount: Number(response.pendingSubmissionsCount) })),
     };
   }
 
-  async updateScore(testId:string, point:number, questionId:string, studentId:string, autoGrade:string) {
-    await this.db.updateTable('student_grading').set({point, autoGraded: autoGrade === "true"}).where('testId', '=', testId).where('student_grading.studentId', '=', studentId).where('student_grading.questionId', '=', questionId).execute();
-    return {message: "Successfully updated score"}
+  async updateScore(testId: string, point: number, questionId: string, studentId: string, autoGrade: string) {
+    await this.db
+      .updateTable('student_grading')
+      .set({ point, autoGraded: autoGrade === 'true' })
+      .where('testId', '=', testId)
+      .where('student_grading.studentId', '=', studentId)
+      .where('student_grading.questionId', '=', questionId)
+      .execute();
+    return { message: 'Successfully updated score' };
   }
 
   async sendTokenToEmail({ email, code }: SendTestTokenDto) {
-    console.log(email)
+    console.log(email);
     // Get the test
     const test = await this.db
       .selectFrom('tests')
@@ -619,11 +619,10 @@ export class TestService {
     };
   }
 
-
   private isWithinTime(startedAt: Date, timeLimit: number) {
     const now = new Date();
     const endTime = addMinutes(startedAt, timeLimit);
-    console.log(isWithinInterval(now, { start: startedAt, end: endTime }))
+    console.log(isWithinInterval(now, { start: startedAt, end: endTime }));
     return isWithinInterval(now, { start: startedAt, end: endTime });
   }
 }

@@ -1,10 +1,4 @@
-import {
-  IsUUID,
-  IsNumber,
-  ValidateNested,
-  ArrayNotEmpty,
-  IsArray,
-} from 'class-validator';
+import { IsUUID, IsNumber, ValidateNested, ArrayNotEmpty, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class ItemDto {
