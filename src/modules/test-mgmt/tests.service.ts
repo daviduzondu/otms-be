@@ -6,17 +6,15 @@ import { Request } from 'express';
 import { tests } from '../kysesly/kysesly-types/kysesly';
 import { CustomException } from '../../exceptions/custom.exception';
 import { EmailService } from '../email/email.service';
-import { SendTestInvitationMailDto, SendTestTokenDto } from './dto/mail-test.dto';
+import { SendTestInvitationMailDto, SendTestResults, SendTestTokenDto } from './dto/mail-test.dto';
 import path from 'node:path';
 import { ConfigService } from '@nestjs/config';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
 import { customAlphabet } from 'nanoid';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/postgres';
-import { addMinutes, format, isBefore, isWithinInterval } from 'date-fns';
+import { addMinutes, isWithinInterval } from 'date-fns';
 import { QuestionType } from '../kysesly/kysesly-types/enums';
 import _ from 'lodash';
-import * as test from 'node:test';
-import { sql } from 'kysely';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { customAlphabet } = require('fix-esm').require('nanoid');
 
@@ -500,11 +498,13 @@ export class TestService {
     });
 
     return {
-      message: 'Mail sent to all receipients',
+      message: 'Mail sent to all recipients',
     };
   }
 
   async getResponses(testId: string) {
+    // Mark what is graded
+
     const betterResponses = await this.db
       .selectFrom('students')
       .innerJoin('test_participants', (join) => join.onRef('test_participants.studentId', '=', 'students.id').on('test_participants.testId', '=', testId))
@@ -560,6 +560,37 @@ export class TestService {
       message: `Submissions for test: ${testId}`,
       data: betterResponses.map((response) => Object.assign(response, { completed: false, pendingSubmissionsCount: Number(response.pendingSubmissionsCount) })),
     };
+  }
+
+  async getResult(testId: string, studentId: string) {
+    const data = await this.db
+      .selectFrom('tests')
+      .innerJoin('test_attempts', 'test_attempts.testId', 'tests.id')
+      .selectAll('tests')
+      .where('testId', '=', testId)
+      .where('test_attempts.endsAt', '<', new Date())
+      .where((eb) =>
+        eb('tests.showResultsAfterTest', '=', true).and(
+          eb.not(
+            eb.exists(
+              eb
+                .selectFrom('questions')
+                .select('id') // Just selecting a column to check existence
+                .where('questions.testId', '=', testId)
+                .where('questions.type', 'in', ['essay', 'shortAnswer'])
+            )
+          )
+        )
+      )
+      .select((eb) => [jsonArrayFrom(eb.selectFrom('student_grading').innerJoin('questions', 'questions.id', 'student_grading.questionId').selectAll().where('student_grading.studentId', '=', studentId)).as('results')])
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException("You cannot get your result through this means.", HttpStatus.NOT_FOUND);
+      });
+
+    return {
+      message: "Here's your test results",
+      data
+    }
   }
 
   async updateScore(testId: string, point: number, questionId: string, studentId: string, autoGrade: string) {
@@ -618,6 +649,128 @@ export class TestService {
       message: 'Mail sent to all recipients',
     };
   }
+
+  async sendResultToEmail(req, { students, testId }: SendTestResults) {
+
+    // Get the test
+    const data = await this.db
+      .selectFrom('tests')
+      .selectAll('tests')
+      .select((eb) => [
+        eb.selectFrom('questions').where('questions.testId', '=',testId).where((eb) => eb.or(
+          [eb('questions.isDeleted', '=', false), eb('questions.isDeleted', 'is', null)]))
+          .select(eb=>[eb.fn.sum('questions.points').as('qc')]).as('totalTestPoints'),
+        jsonArrayFrom(
+          eb
+            .selectFrom('students')
+            .innerJoin('student_grading', 'student_grading.studentId', 'students.id')
+            .selectAll('students') // Select student-level data
+            .select((eb) => [
+              // Total points earned by the student
+              eb.fn.sum('student_grading.point').as('finalScore'),
+              // Breakdown of counts for partially correct, correct, and incorrect answers
+              jsonObjectFrom(
+                eb
+                  .selectFrom('student_grading')
+                  .leftJoin('questions', 'questions.id', 'student_grading.questionId')
+                  .select((eb) => [
+                    // Count of partially correct answers
+                    eb.fn
+                      .count(
+                        eb
+                          .case()
+                          .when(
+                            eb.and([
+                              eb('student_grading.point', '>', 0), // Points greater than 0
+                              eb('student_grading.point', '<', eb.ref('questions.points')), // Less than full points
+                            ])
+                          )
+                          .then(1)
+                          .end()
+                      )
+                      .as('partiallyCorrectAnswerCount'),
+
+                    // Count of correct answers
+                    eb.fn
+                      .count(
+                        eb
+                          .case()
+                          .when(
+                            eb('student_grading.point', '=', eb.ref('questions.points')) // Full points
+                          )
+                          .then(1)
+                          .end()
+                      )
+                      .as('correctAnswerCount'),
+
+                    // Count of incorrect answers
+                    eb.fn
+                      .count(
+                        eb
+                          .case()
+                          .when(
+                            eb('student_grading.point', '=', 0).or('student_grading.answer', 'is', null) // Zero points
+                          )
+                          .then(1)
+                          .end()
+                      )
+                      .as('incorrectAnswerCount'),
+                  ])
+                  .where('questions.testId', '=', testId)
+                  .whereRef('student_grading.studentId', '=', eb.ref('students.id')) // Match the student in the outer query
+                  .where('student_grading.testId', '=', testId) // Match the test ID
+              ).as('breakdown'),
+            ])
+            .where('students.id', 'in', students) // Limit to relevant students
+            .where('student_grading.testId', '=', testId) // Ensure grading data matches the test
+            .groupBy(['students.id']) // Group by unique student
+        ).as('results')
+      ])
+      .where('tests.id', '=', testId)
+      .where('tests.isDeleted', '=', false)
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException('Test not found!', HttpStatus.NOT_FOUND);
+      });
+
+
+    // Get the students
+
+    if (data.results.length === 0) {
+      throw new CustomException('Some students in this list do not exist', HttpStatus.NOT_FOUND);
+    }
+
+    // Get the teacher
+    const teacher = await this.db
+      .selectFrom('teachers')
+      .selectAll()
+      .where('id', '=', (req as any).user.id)
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException('Teacher not found!', HttpStatus.NOT_FOUND);
+      });
+
+    await this.emailService.sendEmail({
+      to: data.results.map((x) => ({ email: x.email, name: `${x.firstName} ${x.lastName}` })),
+      subject: 'Your result is ready',
+      templateName: 'result-notification',
+      context: data.results.map((x) => ({
+        studentName: `${x.firstName} ${x.lastName}`,
+        teacherName: `${teacher.firstName} ${teacher.lastName}`,
+        testName: data.title,
+        finalScore: x.finalScore,
+        totalTestPoints: data.totalTestPoints,
+        partiallyCorrectAnswerCount: x.breakdown.partiallyCorrectAnswerCount,
+        correctAnswerCount: x.breakdown.correctAnswerCount,
+        incorrectAnswerCount: x.breakdown.incorrectAnswerCount,
+        email: x.email,
+      })),
+    });
+
+    return {
+      message: 'Mail sent to all recipients',
+      data
+    };
+  }
+
 
   private isWithinTime(startedAt: Date, timeLimit: number) {
     const now = new Date();

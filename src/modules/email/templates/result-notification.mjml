@@ -1,0 +1,75 @@
+test-invitation.mjml<mjml>
+    <mj-head>
+        <mj-title>OTMS Test Invitation</mj-title>
+        <mj-font name="Arial" href="https://fonts.googleapis.com/css?family=Arial" />
+        <mj-attributes>
+            <mj-all font-family="Arial, Helvetica, sans-serif" />
+            <mj-text font-size="16px" line-height="1.5" color="#4a5568" />
+        </mj-attributes>
+    </mj-head>
+    <mj-body background-color="#f8fafc">
+        <mj-wrapper background-color="#ffffff" border-radius="12px" padding="20px">
+            <!-- Invitation Text Section -->
+            <mj-section padding="0px 30px 20px">
+                <mj-column>
+                    <mj-text font-size="24px" font-weight="bold" color="#2d3748" align="center" padding-bottom="10px">Your result is ready</mj-text>
+                    <mj-text font-size="16px" color="#4a5568" align="left" padding="20px 0 0">
+                        Hello <strong style="color: #2b6cb0;">{{required studentName}}</strong>,
+                    </mj-text>
+                    <mj-text font-size="16px" color="#4a5568" align="left" padding="20px 0 0">
+                        Your teacher, <strong style="color: #2b6cb0;">{{required teacherName}}</strong>, has completed your grading for the test {{required testName}}. <br /> <br />Here's your final score:
+                    </mj-text>
+
+                    <mj-text align="center" color="#2b6cb0" font-size="30px" font-weight="bold" padding="0">
+                        <span style="font-size: 50px; font-weight: bold;">{{required finalScore}}</span>
+                        /
+                        <span style="font-size: 30px; font-weight: normal;">{{required totalTestPoints}}</span>
+                    </mj-text>
+
+
+                    <mj-text font-size="16px" color="#718096" align="left" padding="20px 0 0 0px">
+                        Here's a breakdown of how you were graded:
+                    </mj-text>
+                </mj-column>
+            </mj-section>
+
+            <mj-section>
+                <mj-column>
+                    <mj-text>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #ccc;">Correct answers</td>
+                                <td style="padding: 10px; border: 1px solid #ccc;">{{required correctAnswerCount}}</td>
+                            </tr>
+                            <tr style="background-color: #f4f4f4;">
+                                <td style="padding: 10px; border: 1px solid #ccc;">Incorrect answers</td>
+                                <td style="padding: 10px; border: 1px solid #ccc;">{{required incorrectAnswerCount}}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #ccc;">Partially correct answers</td>
+                                <td style="padding: 10px; border: 1px solid #ccc;">{{required partiallyCorrectAnswerCount}}</td>
+                            </tr>
+                        </table>
+                    </mj-text>
+                </mj-column>
+            </mj-section>
+
+            <!-- Footer Section -->
+            <mj-section>
+                <mj-column>
+                    <mj-text font-size="16px" color="#4a5568" align="left">Good work,</mj-text>
+                    <mj-text font-size="16px" color="#4a5568" align="left">David Uzondu (OTMS Team)</mj-text>
+                </mj-column>
+            </mj-section>
+
+            <!-- Legal Notice Section -->
+            <mj-section background-color="#2d3748" padding="20px 30px">
+                <mj-column>
+                    <mj-text font-size="14px" color="#a0aec0" align="center">© 2024 Online Test Management System (OTMS). All rights reserved.</mj-text>
+                    <mj-text font-size="14px" color="#a0aec0" align="center" padding-top="10px">This is an automated message. Please do not reply to this email.</mj-text>
+                </mj-column>
+            </mj-section>
+
+        </mj-wrapper>
+    </mj-body>
+</mjml>

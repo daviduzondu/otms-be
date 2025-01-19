@@ -5,7 +5,7 @@ import { Request } from 'express';
 import { TestService } from './tests.service';
 import CheckOwnership from '../../decorators/check-ownership.decorator';
 import { OwnerGuard } from '../../guards/owner.guard';
-import { SendTestInvitationMailDto, SendTestTokenDto } from './dto/mail-test.dto';
+import { SendTestInvitationMailDto, SendTestResults, SendTestTokenDto } from './dto/mail-test.dto';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
 import { AccessTokenGuard } from '../../guards/access-token.guard';
 import { UpdateScoreDto } from './dto/update-score.dto';
@@ -131,6 +131,18 @@ export class TestsController {
     return await this.testService.sendTestInvitationMail(req, payload);
   }
 
+  @Post('send-results')
+  @CheckOwnership({
+    table: 'tests',
+    column: 'id',
+    foreignKey: 'teacherId',
+    pathOnReq: ['body', 'testId'],
+  })
+  @UseGuards(JwtAuthGuard, OwnerGuard)
+  async sendResultToEmail(@Req() req, @Body() payload: SendTestResults){
+    return await this.testService.sendResultToEmail(req, payload);
+  }
+
   @CheckOwnership({
     table: 'tests',
     column: 'id',
@@ -148,5 +160,10 @@ export class TestsController {
     return await this.testService.sendTokenToEmail(payload);
   }
 
-  async getPrintsVersion() {}
+  @Get(":id/result")
+  async getTestResult(){
+    return await this.testService.getResult("7949439e-c4f4-4ef2-a90e-087812a9e16a", "f6cb5ea1-8368-46f0-a124-32fbd5c88b86")
+  }
+
+
 }

@@ -7,7 +7,7 @@ export class SendTestInvitationMailDto {
   @IsArray()
   @ArrayNotEmpty()
   @ArrayMinSize(1)
-  @IsUUID('4', { each: true }) // '4' specifies UUID version, and `each: true` applies validation to each item
+  @IsUUID('4', { each: true })
   students: string[];
 }
 
@@ -18,3 +18,5 @@ export class SendTestTokenDto {
   @IsString()
   code: string;
 }
+
+export class SendTestResults extends SendTestInvitationMailDto {}
