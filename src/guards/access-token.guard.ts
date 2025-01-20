@@ -18,7 +18,7 @@ export class AccessTokenGuard implements CanActivate {
       .where('student_tokens.accessCode', '=', accessToken)
       .select(['students.id', 'student_tokens.accessCode'])
       .executeTakeFirstOrThrow(() => {
-        throw new CustomException('Failed to retrieve info for student with access token: ', HttpStatus.NOT_FOUND);
+        throw new CustomException(`Failed to retrieve info. Is the access token correct?`, HttpStatus.NOT_FOUND);
       });
 
     return true;

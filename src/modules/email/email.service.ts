@@ -18,6 +18,7 @@ export class EmailService {
     private readonly brevoInstance: TransactionalEmailsApi,
   ) {
     handlebars.registerHelper('required', function (variable) {
+      console.log(variable)
       if (variable === undefined || variable === null) {
         throw new Error(`Missing required variable`);
       }

@@ -15,6 +15,7 @@ import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/postgres';
 import { addMinutes, isWithinInterval } from 'date-fns';
 import { QuestionType } from '../kysesly/kysesly-types/enums';
 import _ from 'lodash';
+import { sql } from 'kysely';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { customAlphabet } = require('fix-esm').require('nanoid');
 
@@ -224,6 +225,15 @@ export class TestService {
   }
 
   async fetchQuestion(testId: string, questionId: string, studentId: string) {
+    await this.db
+      .selectFrom('test_attempts')
+      .where('test_attempts.testId', '=', testId)
+      .where('test_attempts.studentId', '=', studentId)
+      .where('test_attempts.endsAt', '>', new Date())
+      .executeTakeFirstOrThrow(() => {
+        throw new CustomException("You've already made a submission", HttpStatus.METHOD_NOT_ALLOWED);
+      });
+
     const data = await this.db.transaction().execute(async (trx) => {
       const question = await trx
         .selectFrom('questions')
@@ -348,13 +358,13 @@ export class TestService {
 
   async submitTest(testId: string, studentId: string) {
     // Retrieve the test
-    const test = await this.db
+    await this.db
       .selectFrom('test_attempts')
-      .leftJoin('tests', 'tests.id', 'test_attempts.testId')
-      .selectAll()
       .where('test_attempts.testId', '=', testId)
+      .where('test_attempts.studentId', '=', studentId)
+      .where('test_attempts.endsAt', '>', new Date())
       .executeTakeFirstOrThrow(() => {
-        throw new CustomException('Attempt not found', HttpStatus.NOT_FOUND);
+        throw new CustomException("You've already made a submission or attempt not found", HttpStatus.METHOD_NOT_ALLOWED);
       });
 
     await this.db
@@ -577,20 +587,20 @@ export class TestService {
                 .selectFrom('questions')
                 .select('id') // Just selecting a column to check existence
                 .where('questions.testId', '=', testId)
-                .where('questions.type', 'in', ['essay', 'shortAnswer'])
-            )
-          )
-        )
+                .where('questions.type', 'in', ['essay', 'shortAnswer']),
+            ),
+          ),
+        ),
       )
       .select((eb) => [jsonArrayFrom(eb.selectFrom('student_grading').innerJoin('questions', 'questions.id', 'student_grading.questionId').selectAll().where('student_grading.studentId', '=', studentId)).as('results')])
       .executeTakeFirstOrThrow(() => {
-        throw new CustomException("You cannot get your result through this means.", HttpStatus.NOT_FOUND);
+        throw new CustomException('You cannot get your result through this means.', HttpStatus.NOT_FOUND);
       });
 
     return {
       message: "Here's your test results",
-      data
-    }
+      data,
+    };
   }
 
   async updateScore(testId: string, point: number, questionId: string, studentId: string, autoGrade: string) {
@@ -651,15 +661,16 @@ export class TestService {
   }
 
   async sendResultToEmail(req, { students, testId }: SendTestResults) {
-
-    // Get the test
     const data = await this.db
       .selectFrom('tests')
       .selectAll('tests')
       .select((eb) => [
-        eb.selectFrom('questions').where('questions.testId', '=',testId).where((eb) => eb.or(
-          [eb('questions.isDeleted', '=', false), eb('questions.isDeleted', 'is', null)]))
-          .select(eb=>[eb.fn.sum('questions.points').as('qc')]).as('totalTestPoints'),
+        eb
+          .selectFrom('questions')
+          .where('questions.testId', '=', testId)
+          .where((eb) => eb.or([eb('questions.isDeleted', '=', false), eb('questions.isDeleted', 'is', null)]))
+          .select((eb) => [eb.fn.sum('questions.points').as('qc')])
+          .as('totalTestPoints'),
         jsonArrayFrom(
           eb
             .selectFrom('students')
@@ -667,7 +678,7 @@ export class TestService {
             .selectAll('students') // Select student-level data
             .select((eb) => [
               // Total points earned by the student
-              eb.fn.sum('student_grading.point').as('finalScore'),
+              eb.fn.coalesce(eb.fn.sum('student_grading.point'), sql<number>`0`).as('finalScore'),
               // Breakdown of counts for partially correct, correct, and incorrect answers
               jsonObjectFrom(
                 eb
@@ -683,10 +694,10 @@ export class TestService {
                             eb.and([
                               eb('student_grading.point', '>', 0), // Points greater than 0
                               eb('student_grading.point', '<', eb.ref('questions.points')), // Less than full points
-                            ])
+                            ]),
                           )
                           .then(1)
-                          .end()
+                          .end(),
                       )
                       .as('partiallyCorrectAnswerCount'),
 
@@ -696,10 +707,10 @@ export class TestService {
                         eb
                           .case()
                           .when(
-                            eb('student_grading.point', '=', eb.ref('questions.points')) // Full points
+                            eb('student_grading.point', '=', eb.ref('questions.points')), // Full points
                           )
                           .then(1)
-                          .end()
+                          .end(),
                       )
                       .as('correctAnswerCount'),
 
@@ -709,22 +720,22 @@ export class TestService {
                         eb
                           .case()
                           .when(
-                            eb('student_grading.point', '=', 0).or('student_grading.answer', 'is', null) // Zero points
+                            eb('student_grading.point', '=', 0).or('student_grading.answer', 'is', null), // Zero points
                           )
                           .then(1)
-                          .end()
+                          .end(),
                       )
                       .as('incorrectAnswerCount'),
                   ])
                   .where('questions.testId', '=', testId)
                   .whereRef('student_grading.studentId', '=', eb.ref('students.id')) // Match the student in the outer query
-                  .where('student_grading.testId', '=', testId) // Match the test ID
+                  .where('student_grading.testId', '=', testId), // Match the test ID
               ).as('breakdown'),
             ])
             .where('students.id', 'in', students) // Limit to relevant students
             .where('student_grading.testId', '=', testId) // Ensure grading data matches the test
-            .groupBy(['students.id']) // Group by unique student
-        ).as('results')
+            .groupBy(['students.id']), // Group by unique student
+        ).as('results'),
       ])
       .where('tests.id', '=', testId)
       .where('tests.isDeleted', '=', false)
@@ -732,14 +743,10 @@ export class TestService {
         throw new CustomException('Test not found!', HttpStatus.NOT_FOUND);
       });
 
-
-    // Get the students
-
     if (data.results.length === 0) {
       throw new CustomException('Some students in this list do not exist', HttpStatus.NOT_FOUND);
     }
 
-    // Get the teacher
     const teacher = await this.db
       .selectFrom('teachers')
       .selectAll()
@@ -760,6 +767,7 @@ export class TestService {
         totalTestPoints: data.totalTestPoints,
         partiallyCorrectAnswerCount: x.breakdown.partiallyCorrectAnswerCount,
         correctAnswerCount: x.breakdown.correctAnswerCount,
+        remark: Number(data.totalTestPoints) > 0 ? ((Number(x.finalScore) / Number(data.totalTestPoints)) * 100 >= 80 ? 'Excellent work!' : (Number(x.finalScore) / Number(data.totalTestPoints)) * 100 >= 50 ? 'Good job!' : 'You can do better,') : 'No score available.',
         incorrectAnswerCount: x.breakdown.incorrectAnswerCount,
         email: x.email,
       })),
@@ -767,10 +775,8 @@ export class TestService {
 
     return {
       message: 'Mail sent to all recipients',
-      data
     };
   }
-
 
   private isWithinTime(startedAt: Date, timeLimit: number) {
     const now = new Date();
