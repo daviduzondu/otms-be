@@ -156,7 +156,19 @@ export class UsersService {
       .innerJoin('tests', 'tests.id', 'student_tokens.testId')
       .where('student_tokens.accessCode', '=', accessCode)
       .selectAll('students')
-      .select((eb) => ['test_participants.isTouched as isTouched', jsonObjectFrom(eb.selectFrom('tests').where('tests.isDeleted', '=', false).whereRef('tests.id', '=', 'student_tokens.testId').selectAll()).as('testInfo')])
+      .select((eb) => ['test_participants.isTouched as isTouched',
+        eb.case().when(eb('tests.showResultsAfterTest', '=', true).and(
+          eb.not(
+            eb.exists(
+              eb
+                .selectFrom('questions')
+                .select('id') // Just selecting a column to check existence
+                .whereRef('questions.testId', '=', 'tests.id')
+                .where('questions.type', 'in', ['essay', 'shortAnswer']),
+            ),
+          ),
+        )).then(true).else(false).end().as('resultReady'),
+        jsonObjectFrom(eb.selectFrom('tests').where('tests.isDeleted', '=', false).whereRef('tests.id', '=', 'student_tokens.testId').selectAll()).as('testInfo')])
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('Failed to retrieve student information. Contact teacher for help.', HttpStatus.NOT_FOUND);
       });

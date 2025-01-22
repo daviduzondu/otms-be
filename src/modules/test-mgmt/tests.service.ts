@@ -40,6 +40,7 @@ export class TestService {
       teacherId: (req as any).user.id,
     } as tests);
 
+
     const test = await this.db.insertInto('tests').values(payload).returningAll().executeTakeFirst();
 
     return {
@@ -122,7 +123,6 @@ export class TestService {
         })
         .join('')} from this test. Because they have already taken it.`;
 
-      console.log(existingAttempt);
       if (existingAttempt.length > 0) throw new CustomException(message, HttpStatus.CONFLICT);
 
       await trx
@@ -325,7 +325,6 @@ export class TestService {
       point: (['mcq', 'trueOrFalse'] as QuestionType[]).includes(question.type) ? (String(answer) === question?.correctAnswer ? question.points : 0) : null,
     };
 
-    // console.log({ ...payload, answer });
 
     // Make a submission
     const result = await this.db
@@ -615,7 +614,6 @@ export class TestService {
   }
 
   async sendTokenToEmail({ email, code }: SendTestTokenDto) {
-    console.log(email);
     // Get the test
     const test = await this.db
       .selectFrom('tests')
@@ -757,7 +755,7 @@ export class TestService {
 
     await this.emailService.sendEmail({
       to: data.results.map((x) => ({ email: x.email, name: `${x.firstName} ${x.lastName}` })),
-      subject: 'Your result is ready',
+      subject: `Your result is ready (${data.title})`,
       templateName: 'result-notification',
       context: data.results.map((x) => ({
         studentName: `${x.firstName} ${x.lastName}`,
@@ -778,10 +776,18 @@ export class TestService {
     };
   }
 
+  // async markAsGraded({students, testId}){
+  //   await this.db.updateTable('test_participants').where("test_participants.testId", '=', testId).where('test_participants.studentId', 'in', students).set({graded: true}).execute();
+  //
+  //   return {
+  //     message: "Students marked as graded"
+  //   }
+  // }
+
   private isWithinTime(startedAt: Date, timeLimit: number) {
     const now = new Date();
     const endTime = addMinutes(startedAt, timeLimit);
-    console.log(isWithinInterval(now, { start: startedAt, end: endTime }));
     return isWithinInterval(now, { start: startedAt, end: endTime });
   }
+
 }

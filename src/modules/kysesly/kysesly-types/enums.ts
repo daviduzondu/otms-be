@@ -21,6 +21,11 @@ export const QuestionType = {
     essay: "essay"
 } as const;
 export type QuestionType = (typeof QuestionType)[keyof typeof QuestionType];
+export const Platform = {
+    desktop: "desktop",
+    mobileAndDesktop: "mobileAndDesktop"
+} as const;
+export type Platform = (typeof Platform)[keyof typeof Platform];
 export const TestStatus = {
     active: "active",
     pending: "pending",

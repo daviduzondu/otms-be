@@ -128,6 +128,7 @@ model tests {
   teacherId            String
   durationMin          Int                 @default(60)
   showResultsAfterTest Boolean             @default(false)
+  platform             Platform            @default(desktop)
   media                media[]
   questions            questions[]
   student_grading      student_grading[]
@@ -227,6 +228,11 @@ enum QuestionType {
   trueOrFalse
   shortAnswer
   essay
+}
+
+enum Platform {
+  desktop
+  mobileAndDesktop
 }
 
 enum TestStatus {

@@ -4,7 +4,7 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
-import type { AttemptStatus, AuthType, MediaType, QuestionType, TestStatus } from "./enums";
+import type { AttemptStatus, AuthType, MediaType, QuestionType, Platform, TestStatus } from "./enums";
 
 export type classes = {
     id: GeneratedAlways<string>;
@@ -133,6 +133,7 @@ export type tests = {
     teacherId: string;
     durationMin: Generated<number>;
     showResultsAfterTest: Generated<boolean>;
+    platform: Generated<Platform>;
 };
 export type DB = {
     classes: classes;

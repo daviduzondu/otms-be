@@ -1,5 +1,6 @@
 import { Exclude } from 'class-transformer';
-import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
+import { Platform } from 'src/modules/kysesly/kysesly-types/enums';
 
 export class CreateTestDto {
   @IsOptional()
@@ -17,6 +18,9 @@ export class CreateTestDto {
   //
   // @IsDateString()
   // endsAt: string;
+
+  @IsEnum(Platform)
+  platform: Platform;
 
   @IsOptional()
   @IsString()
