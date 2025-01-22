@@ -591,7 +591,75 @@ export class TestService {
           ),
         ),
       )
-      .select((eb) => [jsonArrayFrom(eb.selectFrom('student_grading').innerJoin('questions', 'questions.id', 'student_grading.questionId').selectAll().where('student_grading.studentId', '=', studentId)).as('results')])
+      .select((eb) => [
+        eb
+          .selectFrom('questions')
+          .where('questions.testId', '=', testId)
+          .where((eb) => eb.or([eb('questions.isDeleted', '=', false), eb('questions.isDeleted', 'is', null)]))
+          .select((eb) => [eb.fn.sum('questions.points').as('qc')])
+          .as('totalTestPoints'),
+        jsonArrayFrom(eb.selectFrom('students')
+          .innerJoin('student_grading', 'student_grading.studentId', 'students.id')
+          .selectAll('students') // Select student-level data
+          .select((eb) => [
+            // Total points earned by the student
+            eb.fn.coalesce(eb.fn.sum('student_grading.point'), sql<number>`0`).as('finalScore'),
+            // Breakdown of counts for partially correct, correct, and incorrect answers
+            jsonObjectFrom(
+              eb
+                .selectFrom('student_grading')
+                .leftJoin('questions', 'questions.id', 'student_grading.questionId')
+                .select((eb) => [
+                  // Count of partially correct answers
+                  eb.fn
+                    .count(
+                      eb
+                        .case()
+                        .when(
+                          eb.and([
+                            eb('student_grading.point', '>', 0), // Points greater than 0
+                            eb('student_grading.point', '<', eb.ref('questions.points')), // Less than full points
+                          ]),
+                        )
+                        .then(1)
+                        .end(),
+                    )
+                    .as('partiallyCorrectAnswerCount'),
+
+                  // Count of correct answers
+                  eb.fn
+                    .count(
+                      eb
+                        .case()
+                        .when(
+                          eb('student_grading.point', '=', eb.ref('questions.points')), // Full points
+                        )
+                        .then(1)
+                        .end(),
+                    )
+                    .as('correctAnswerCount'),
+
+                  // Count of incorrect answers
+                  eb.fn
+                    .count(
+                      eb
+                        .case()
+                        .when(
+                          eb('student_grading.point', '=', 0).or('student_grading.answer', 'is', null), // Zero points
+                        )
+                        .then(1)
+                        .end(),
+                    )
+                    .as('incorrectAnswerCount'),
+                ])
+                .where('questions.testId', '=', testId)
+                .where('student_grading.studentId', '=', studentId) // Match the student in the outer query
+                .where('student_grading.testId', '=', testId)
+            )
+              .as('breakdown')]).where('students.id', '=', studentId) // Limit to relevant students
+          .where('student_grading.testId', '=', testId) // Ensure grading data matches the test
+          .groupBy(['students.id']), // Group by unique student
+        ).as("results")])
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('You cannot get your result through this means.', HttpStatus.NOT_FOUND);
       });

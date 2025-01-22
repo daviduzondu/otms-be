@@ -161,9 +161,8 @@ export class TestsController {
   }
 
   @Get(":id/result")
-  async getTestResult(){
-    return await this.testService.getResult("7949439e-c4f4-4ef2-a90e-087812a9e16a", "f6cb5ea1-8368-46f0-a124-32fbd5c88b86")
+  @UseGuards(AccessTokenGuard)
+  async getTestResult(@Req() req: Request & { student: { id: string }; }, @Param('id', ParseUUIDPipe) testId: string){
+    return await this.testService.getResult(testId, req.student.id);
   }
-
-
 }
