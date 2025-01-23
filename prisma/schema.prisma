@@ -122,7 +122,6 @@ model tests {
   isDeleted            Boolean             @default(false)
   isRevoked            Boolean             @default(false)
   disableCopyPaste     Boolean?            @default(false)
-  provideExplanations  Boolean?            @default(false)
   randomizeQuestions   Boolean?            @default(false)
   requireFullScreen    Boolean?            @default(true)
   teacherId            String

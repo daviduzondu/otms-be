@@ -8,8 +8,8 @@ export class CreateTestDto {
   printCount: number;
 
   @IsString()
-  @Matches(/^[a-zA-Z0-9 ]*$/, {
-    message: 'Title can only contain letters, numbers, and spaces',
+  @Matches(/^[a-zA-Z0-9\s.,!?()\[\]-]*$/, {
+    message: 'Title can only contain letters, numbers, spaces, and common punctuation (.,!?()[]-)',
   })
   title: string;
   //
@@ -39,9 +39,6 @@ export class CreateTestDto {
   @Min(30)
   @Max(180)
   durationMin: number;
-
-  @IsBoolean()
-  provideExplanations: boolean;
 
   @IsBoolean()
   randomizeQuestions: boolean;

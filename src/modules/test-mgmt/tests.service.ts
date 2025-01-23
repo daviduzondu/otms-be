@@ -312,13 +312,13 @@ export class TestService {
         throw new CustomException('Question not found', HttpStatus.NOT_FOUND);
       });
 
-    // Retrieve start time for timed questions
+
     let submission = await this.db.selectFrom('student_grading').selectAll().where('questionId', '=', questionId).where('testId', '=', testId).where('student_grading.studentId', '=', studentId).executeTakeFirst();
 
     if (!submission?.startedAt) throw new CustomException('One or more parameters are missing', HttpStatus.BAD_REQUEST);
 
     const payload = {
-      startedAt: submission?.startedAt,
+      startedAt: submission.startedAt,
       submittedAt: new Date(),
       isWithinTime: question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) : this.isWithinTime(testAttempt.startedAt, testAttempt.durationMin + 2),
       autoGraded: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type),

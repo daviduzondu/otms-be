@@ -127,7 +127,6 @@ export type tests = {
     isDeleted: Generated<boolean>;
     isRevoked: Generated<boolean>;
     disableCopyPaste: Generated<boolean | null>;
-    provideExplanations: Generated<boolean | null>;
     randomizeQuestions: Generated<boolean | null>;
     requireFullScreen: Generated<boolean | null>;
     teacherId: string;

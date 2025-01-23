@@ -33,7 +33,7 @@ export class QuestionsService {
       .insertInto('questions')
       .values(
         Object.assign(payload as any, {
-          index: Number(totalQuestions) > 0 ? Number(totalQuestions) + 1 : 0,
+          index: Number(totalQuestions) > 0 ? Number(totalQuestions) : 0,
         }),
       )
       .returningAll()
