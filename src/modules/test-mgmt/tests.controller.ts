@@ -1,4 +1,19 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Req,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CreateTestDto } from './dto/create-test.dto';
 import { Request } from 'express';
@@ -9,6 +24,7 @@ import { SendTestInvitationMailDto, SendTestResults, SendTestTokenDto } from './
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
 import { AccessTokenGuard } from '../../guards/access-token.guard';
 import { UpdateScoreDto } from './dto/update-score.dto';
+import { RevokeTestDto } from './dto/revoke-test.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('tests')
@@ -31,6 +47,18 @@ export class TestsController {
   @UseGuards(JwtAuthGuard, OwnerGuard)
   async getTest(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     return await this.testService.getTest(id, req);
+  }
+
+  @Patch(':id/revoke')
+  @CheckOwnership({
+    table: 'tests',
+    column: 'id',
+    foreignKey: 'teacherId',
+    pathOnReq: ['params', 'id'],
+  })
+  @UseGuards(JwtAuthGuard, OwnerGuard)
+  async revokeTest(@Param('id', ParseUUIDPipe) id:string, @Body() payload: RevokeTestDto) {
+    return await this.testService.revokeTest(id, payload.revoked);
   }
 
   @Post(':id/participants/add')

@@ -43,7 +43,7 @@ export class QuestionsController {
     foreignKey: 'teacherId',
     pathOnReq: ['body', 'testId'],
   })
-  async deleteQuestion(@Param('questionId', ParseUUIDPipe) questionId: string) {
+  async deleteQuestion(@Param('questionId', ParseUUIDPipe) questionId: string, @Body() {testId}: {testId:string}) {
     return await this.questionsService.deleteQuestion(questionId);
   }
 

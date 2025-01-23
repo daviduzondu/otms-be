@@ -34,6 +34,13 @@ export class TestService {
     return customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 12)();
   }
 
+  async revokeTest(testId: string, revoked: boolean){
+     await this.db.updateTable('tests').set('isRevoked', revoked).where('tests.id', '=',testId).execute();
+     return {
+       message: "Updated test status"
+     }
+  }
+
   async createNewTest(payload: CreateTestDto, req: Request) {
     Object.assign(payload, {
       code: await this.generateTestCode(),
