@@ -116,12 +116,16 @@ export class AnalyticsService {
     const data = await this.db
       .selectFrom('tests')
       .where('tests.isDeleted', '=', false)
-      .innerJoin('test_participants', (join) => join.onRef('test_participants.testId', '=', 'tests.id'))
+      .innerJoin('test_attempts', (join) => join.onRef('test_attempts.testId', '=', 'tests.id'))
       .innerJoin('student_grading', (join) => join.onRef('student_grading.testId', '=', 'tests.id'))
-      .where('test_participants.studentId', '=', studentId) // Filter by the student's ID
+      .where('test_attempts.studentId', '=', studentId) // Filter by the student's ID
       .selectAll('tests') // Select all columns from the "tests" table
-      .select((eb) => [eb.fn.sum('student_grading.point').as('totalPoints')])
-      .groupBy('tests.id')
+      .select((eb) => [eb.fn.sum('student_grading.point').as('totalPoints'),
+
+        'test_attempts.startedAt',
+        eb.fn.coalesce(eb.ref('test_attempts.submittedAt'), eb.ref('test_attempts.endsAt')).as('submittedAt'),
+      ])
+      .groupBy(['test_attempts.submittedAt','test_attempts.startedAt', 'tests.id', 'test_attempts.endsAt'])
       .execute();
 
     return {

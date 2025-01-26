@@ -254,10 +254,11 @@ export class TestService {
 
       await trx.updateTable('test_attempts').set({ currentQuestionId: questionId }).where('test_attempts.studentId', '=', studentId).where('test_attempts.testId', '=', testId).executeTakeFirst();
 
+      const startAt = new Date()
       const { startedAt } = await trx
         .insertInto('student_grading')
         .values({
-          startedAt: new Date(),
+          startedAt: startAt,
           isTouched: true,
           studentId,
           testId,
@@ -265,7 +266,6 @@ export class TestService {
         })
         .onConflict((oc) =>
           oc.columns(['questionId', 'testId', 'studentId']).doUpdateSet({
-            startedAt: new Date(),
             isTouched: true,
           }),
         )
@@ -397,8 +397,6 @@ export class TestService {
         throw new CustomException('Failed to retrieve details. Is the access token correct?', HttpStatus.NOT_FOUND);
       });
 
-    await this.db.updateTable('test_participants').set({ isTouched: true }).where('studentId', '=', studentId).where('testId', '=', testId).execute();
-
     // Retrieve the test associated with that access code.
     const test = await this.db
       .selectFrom('tests')
@@ -432,6 +430,7 @@ export class TestService {
 
     if (existingAttempt) {
       questions = existingAttempt.questions;
+      await this.db.updateTable('test_participants').set({ isTouched: true }).where('studentId', '=', studentId).where('testId', '=', testId).execute();
     } else {
       let result = await this.db
         .insertInto('test_attempts')

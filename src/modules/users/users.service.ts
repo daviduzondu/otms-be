@@ -27,7 +27,7 @@ export class UsersService {
       .selectFrom('teachers')
       .leftJoin('media', 'media.uploader', 'teachers.id')
       .leftJoin('tests', 'tests.teacherId', 'teachers.id')
-      .select(['teachers.id', 'teachers.firstName', 'teachers.lastName', 'teachers.email', 'teachers.photoId', 'teachers.banned', 'teachers.isEmailVerified', 'teachers.authType', 'tests.id as testId', 'media.id as mediaId', 'media.url as mediaUrl'])
+      .select(['teachers.id', 'teachers.firstName', 'teachers.lastName', 'teachers.email', 'teachers.photoId', 'teachers.banned', 'teachers.isEmailVerified', 'tests.id as testId', 'media.id as mediaId', 'media.url as mediaUrl'])
       .where(teacherId ? 'teachers.id' : 'teachers.email', '=', teacherId ?? email)
       .executeTakeFirst();
 
@@ -43,7 +43,6 @@ export class UsersService {
       photoId: teacher.photoId,
       banned: teacher.banned,
       isEmailVerified: teacher.isEmailVerified,
-      authType: teacher.authType,
       uploads: teacher.mediaId ? [{ id: teacher.mediaId, url: teacher.mediaUrl }] : [],
     };
   }
@@ -152,10 +151,10 @@ export class UsersService {
     const student = await this.db
       .selectFrom('students')
       .innerJoin('student_tokens', 'student_tokens.studentId', 'students.id')
-      .innerJoin('test_participants', 'test_participants.studentId', 'student_tokens.studentId')
       .innerJoin('tests', 'tests.id', 'student_tokens.testId')
+      .innerJoin('test_participants', join=>join.onRef('test_participants.studentId', '=', 'student_tokens.studentId').onRef('test_participants.testId', '=', 'student_tokens.testId'))
       .where('student_tokens.accessCode', '=', accessCode)
-      .selectAll('students')
+      .selectAll()
       .select((eb) => ['test_participants.isTouched as isTouched',
         eb.case().when(eb('tests.showResultsAfterTest', '=', true).and(
           eb.not(

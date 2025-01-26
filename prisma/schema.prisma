@@ -10,6 +10,12 @@ generator kysesly {
   fileName     = "kysesly.ts"
 }
 
+generator dbml {
+  provider              = "prisma-dbml-generator"
+  includeRelationFields = false
+  manyToMany            = false
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -101,7 +107,6 @@ model teachers {
   photoId                         String?
   banned                          Boolean?   @default(false)
   isEmailVerified                 Boolean?   @default(false)
-  authType                        AuthType?
   createdAt                       DateTime   @default(now())
   updatedAt                       DateTime   @default(now()) @updatedAt
   classes                         classes[]
@@ -211,11 +216,6 @@ enum AttemptStatus {
   unsubmitted
 }
 
-enum AuthType {
-  local
-  google
-}
-
 enum MediaType {
   image
   video
@@ -232,11 +232,4 @@ enum QuestionType {
 enum Platform {
   desktop
   mobileAndDesktop
-}
-
-enum TestStatus {
-  active
-  pending
-  completed
-  paused
 }

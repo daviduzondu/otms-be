@@ -10,7 +10,7 @@ export class ClassController {
   constructor(private readonly classesService: ClassService) {}
 
   @Get()
-  async getClasses(@Req() req, @Query('showTestParticipationStatus') testId: string) {
+  async getClasses(@Req() req, @Query('showTestParticipationStatus') testId?: string) {
     return await this.classesService.getClasses(req, testId);
   }
 

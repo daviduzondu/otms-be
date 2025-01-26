@@ -32,7 +32,8 @@ export class ClassService {
   //   };
   // }
 
-  async getClasses(req, testId: string) {
+  async getClasses(req, testId?: string) {
+    console.log(req.user.id)
     const classes = await this.db
       .selectFrom('classes')
       .leftJoin('student_class', 'classes.id', 'classId')
@@ -40,14 +41,16 @@ export class ClassService {
       .leftJoin('test_participants', (qb) => qb.onRef('test_participants.studentId', '=', 'student_class.studentId').on('test_participants.testId', '=', testId))
       .select(({ eb, selectFrom }) => [
         'classes.id as id', // Ensure we're always selecting class.id as a fallback
+        'classes.createdAt as createdAt',
         'name',
         'students.firstName',
         'students.lastName',
         'students.email',
         'regNumber',
         'students.id as studentId',
-        sql`CASE WHEN test_participants.id IS NOT NULL THEN TRUE ELSE FALSE END`.as('isParticipant'),
-        'test_participants.origin as origin',
+        testId ? eb.case().when('test_participants.id', 'is not', null).then(true).else(false).end().as('isParticipant') : 'name',
+        // sql`CASE WHEN test_participants.id IS NOT NULL THEN TRUE ELSE FALSE END`.as('isParticipant'),
+        testId ? 'test_participants.origin as origin': 'name',
       ])
       .where('teacherId', '=', (req as any).user.id)
       .execute();
@@ -57,11 +60,13 @@ export class ClassService {
       data: Object.entries(Object.groupBy(classes, (o) => o.id)).map(([id, students]) => ({
         id,
         name: students[0].name,
+        createdAt: students[0].createdAt,
         students: students
           .filter((student) => student.studentId !== null) // Filter out empty student entries
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          .map(({ name, studentId: id, ...rest }) => ({
+          .map(({ name, studentId: id, createdAt, ...rest }) => ({
             ...rest,
+            createdAt: undefined,
             id,
           })),
       })),

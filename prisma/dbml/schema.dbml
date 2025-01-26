@@ -1,0 +1,224 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table classes {
+  id String [pk]
+  name String [not null]
+  teacherId String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+}
+
+Table media {
+  id String [pk]
+  type MediaType [not null]
+  url String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  uploader String
+  studentId String
+  testId String
+}
+
+Table questions {
+  id String [pk]
+  testId String [not null]
+  type QuestionType [not null]
+  options String[] [not null]
+  correctAnswer String
+  body String [not null]
+  mediaId String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  points Int [not null, default: 10]
+  isDeleted Boolean [not null, default: false]
+  index Int [not null, default: 0]
+  timeLimit Int
+}
+
+Table student_class {
+  id String [pk]
+  studentId String [not null]
+  classId String [not null]
+  removeAfter DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+}
+
+Table students {
+  id String [pk]
+  email String [not null]
+  regNumber String [not null]
+  firstName String [not null]
+  lastName String [not null]
+  middleName String
+  addedBy String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+}
+
+Table teachers {
+  id String [pk]
+  firstName String [not null]
+  lastName String
+  email String [unique, not null]
+  password String
+  photoId String
+  banned Boolean [default: false]
+  isEmailVerified Boolean [default: false]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+}
+
+Table tests {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  code String [unique]
+  printCount Int
+  instructions String
+  title String [not null]
+  isDeleted Boolean [not null, default: false]
+  isRevoked Boolean [not null, default: false]
+  disableCopyPaste Boolean [default: false]
+  randomizeQuestions Boolean [default: false]
+  requireFullScreen Boolean [default: true]
+  teacherId String [not null]
+  durationMin Int [not null, default: 60]
+  showResultsAfterTest Boolean [not null, default: false]
+  platform Platform [not null, default: 'desktop']
+}
+
+Table test_attempts {
+  id String [pk]
+  testId String [not null]
+  studentId String [not null]
+  questions String[] [not null]
+  startedAt DateTime [not null]
+  endsAt DateTime [not null]
+  status AttemptStatus [not null, default: 'unsubmitted']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  currentQuestionId String [not null]
+  submittedAt DateTime
+
+  indexes {
+    (testId, studentId) [unique]
+  }
+}
+
+Table test_participants {
+  id String [pk]
+  studentId String [not null]
+  testId String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  origin String
+  graded Boolean [not null, default: false]
+  isTouched Boolean [not null, default: false]
+
+  indexes {
+    (testId, studentId) [unique]
+  }
+}
+
+Table student_grading {
+  id String [pk]
+  studentId String [not null]
+  questionId String [not null]
+  testId String [not null]
+  isTouched Boolean [not null, default: false]
+  point Int
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  startedAt DateTime
+  answer String
+  isWithinTime Boolean
+  autoGraded Boolean [not null, default: false]
+  submittedAt DateTime
+
+  indexes {
+    (questionId, studentId, testId) [unique]
+  }
+}
+
+Table student_tokens {
+  id String [pk]
+  studentId String [not null]
+  testId String [not null]
+  accessCode String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+
+  indexes {
+    (testId, studentId, accessCode) [unique]
+  }
+}
+
+Enum AttemptStatus {
+  submitted
+  unsubmitted
+}
+
+Enum MediaType {
+  image
+  video
+  audio
+}
+
+Enum QuestionType {
+  mcq
+  trueOrFalse
+  shortAnswer
+  essay
+}
+
+Enum Platform {
+  desktop
+  mobileAndDesktop
+}
+
+Ref: classes.teacherId > teachers.id
+
+Ref: media.studentId > students.id
+
+Ref: media.testId > tests.id
+
+Ref: media.uploader > teachers.id
+
+Ref: questions.mediaId > media.id
+
+Ref: questions.testId > tests.id
+
+Ref: student_class.classId > classes.id
+
+Ref: student_class.studentId > students.id
+
+Ref: students.addedBy > teachers.id
+
+Ref: teachers.photoId - media.id
+
+Ref: tests.teacherId > teachers.id
+
+Ref: test_attempts.currentQuestionId > questions.id
+
+Ref: test_attempts.studentId > students.id
+
+Ref: test_attempts.testId > tests.id
+
+Ref: test_participants.origin > classes.id
+
+Ref: test_participants.studentId > students.id
+
+Ref: test_participants.testId > tests.id
+
+Ref: student_grading.questionId > questions.id
+
+Ref: student_grading.studentId > students.id
+
+Ref: student_grading.testId > tests.id
+
+Ref: student_tokens.studentId > students.id
+
+Ref: student_tokens.testId > tests.id
