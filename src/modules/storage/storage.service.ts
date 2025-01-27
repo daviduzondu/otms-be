@@ -26,10 +26,13 @@ export class StorageService {
       throw new Error('Unsupported file type');
     }
   }
-  async uploadFile(file: Express.Multer.File, req: Request, questionId: string, testId?: string, studentId?: string) {
-    const existingAttempt = await this.db.selectFrom('test_attempts').innerJoin('questions', 'questions.testId', 'test_attempts.testId').selectAll().where('questions.id', '=', questionId).executeTakeFirst();
-    if (existingAttempt) {
-      throw new CustomException('You cannot make any changes because one or more students have attempted this test', HttpStatus.CONFLICT);
+
+  async uploadFile(file: Express.Multer.File, req: Request, questionId?: string, testId?: string, studentId?: string) {
+    if (questionId) {
+      const existingAttempt = await this.db.selectFrom('test_attempts').innerJoin('questions', 'questions.testId', 'test_attempts.testId').selectAll().where('questions.id', '=', questionId).executeTakeFirst();
+      if (existingAttempt) {
+        throw new CustomException('You cannot make any changes because one or more students have attempted this test', HttpStatus.CONFLICT);
+      }
     }
 
     const {

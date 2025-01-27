@@ -88,6 +88,7 @@ Table tests {
   durationMin Int [not null, default: 60]
   showResultsAfterTest Boolean [not null, default: false]
   platform Platform [not null, default: 'desktop']
+  brandingEnable Boolean [not null, default: false]
 }
 
 Table test_attempts {
@@ -160,15 +161,11 @@ Table branding {
   id String [pk]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [default: `now()`, not null]
-  testId String [not null]
-  addedBy String [not null]
+  addedBy String [unique, not null]
+  mediaId String [not null]
   field1 String
   field2 String
   field3 String
-
-  indexes {
-    (testId, addedBy) [unique]
-  }
 }
 
 Enum AttemptStatus {
@@ -238,6 +235,6 @@ Ref: student_tokens.studentId > students.id
 
 Ref: student_tokens.testId > tests.id
 
-Ref: branding.testId > tests.id
+Ref: branding.mediaId > media.id
 
 Ref: branding.addedBy > teachers.id

@@ -10,8 +10,8 @@ export type branding = {
     id: GeneratedAlways<string>;
     createdAt: Generated<Timestamp>;
     updatedAt: Generated<Timestamp>;
-    testId: string;
     addedBy: string;
+    mediaId: string;
     field1: string | null;
     field2: string | null;
     field3: string | null;
@@ -142,6 +142,7 @@ export type tests = {
     durationMin: Generated<number>;
     showResultsAfterTest: Generated<boolean>;
     platform: Generated<Platform>;
+    brandingEnable: Generated<boolean>;
 };
 export type DB = {
     branding: branding;

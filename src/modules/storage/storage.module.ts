@@ -1,4 +1,4 @@
-import { HttpStatus, Module } from '@nestjs/common';
+import { forwardRef, HttpStatus, Module } from '@nestjs/common';
 import { StorageController } from './storage.controller';
 import { StorageService } from './storage.service';
 import { MulterModule } from '@nestjs/platform-express';
@@ -8,9 +8,11 @@ import { FirebaseStorageEngine } from './engine/firebase-storage.engine';
 import { FirebaseService } from '../firebase/firebase.service';
 import { ConfigService } from '@nestjs/config';
 import { BrandingController } from '../branding/branding.controller';
+import { BrandingModule } from '../branding/branding.module';
 
 @Module({
   imports: [
+    forwardRef(()=>BrandingModule),
     MulterModule.registerAsync({
       imports: [],
       inject: [FirebaseService, ConfigService], // Inject FirebaseService into the MulterModule
@@ -34,5 +36,6 @@ import { BrandingController } from '../branding/branding.controller';
   ],
   controllers: [StorageController, BrandingController],
   providers: [StorageService],
+  exports: [StorageService]
 })
 export class StorageModule {}

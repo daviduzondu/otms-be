@@ -57,6 +57,11 @@ export class TestService {
   }
 
   async editTest(payload: EditTestDto, req: Request) {
+    const existingAttempt = await this.db.selectFrom('test_attempts').selectAll().where('testId', '=', payload.testId).executeTakeFirst();
+    if (existingAttempt) {
+      throw new CustomException('You cannot edit this question because one or more students have attempted this test', HttpStatus.CONFLICT);
+    }
+
     const testId = payload.testId;
     Object.assign(payload, {
       teacherId: (req as any).user.id,

@@ -46,6 +46,7 @@ model media {
   teachers_media_UploaderToteachers teachers?   @relation("media_teacherIdToteachers", fields: [uploader], references: [id])
   questions                         questions[]
   teachers_teachers_photoIdTomedia  teachers[]  @relation("teachers_photoIdTomedia")
+  branding                          branding[]
 }
 
 model questions {
@@ -141,7 +142,7 @@ model tests {
   test_attempts        test_attempts[]
   test_participants    test_participants[]
   teachers             teachers            @relation(fields: [teacherId], references: [id])
-  branding             branding[]
+  brandingEnable       Boolean             @default(false)
 }
 
 model test_attempts {
@@ -217,15 +218,13 @@ model branding {
   id              String   @id @default(dbgenerated("gen_random_uuid()"))
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now()) @updatedAt
-  testId          String
-  addedBy         String
+  addedBy         String   @unique
+  mediaId         String
   field1          String?
   field2          String?
   field3          String?
-  testRelation    tests    @relation(fields: [testId], references: [id])
+  mediaRelation   media    @relation(fields: [mediaId], references: [id])
   teacherRelation teachers @relation(fields: [addedBy], references: [id])
-
-  @@unique([testId, addedBy])
 }
 
 enum AttemptStatus {
