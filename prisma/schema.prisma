@@ -114,6 +114,7 @@ model teachers {
   students                        students[]
   media_teachers_photoIdTomedia   media?     @relation("teachers_photoIdTomedia", fields: [photoId], references: [id])
   tests                           tests[]
+  branding                        branding[]
 }
 
 model tests {
@@ -140,6 +141,7 @@ model tests {
   test_attempts        test_attempts[]
   test_participants    test_participants[]
   teachers             teachers            @relation(fields: [teacherId], references: [id])
+  branding             branding[]
 }
 
 model test_attempts {
@@ -209,6 +211,21 @@ model student_tokens {
   test       tests    @relation(fields: [testId], references: [id])
 
   @@unique([testId, studentId, accessCode])
+}
+
+model branding {
+  id              String   @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+  testId          String
+  addedBy         String
+  field1          String?
+  field2          String?
+  field3          String?
+  testRelation    tests    @relation(fields: [testId], references: [id])
+  teacherRelation teachers @relation(fields: [addedBy], references: [id])
+
+  @@unique([testId, addedBy])
 }
 
 enum AttemptStatus {

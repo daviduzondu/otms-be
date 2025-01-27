@@ -9,7 +9,7 @@ export class TransformInterceptor implements NestInterceptor {
       map((obj) => {
         if (obj?.data) {
           const { data } = obj;
-          data.createdAt = undefined;
+          // data.createdAt = undefined;
           data.updatedAt = undefined;
         }
         // console.log(obj);

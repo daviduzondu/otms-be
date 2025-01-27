@@ -15,7 +15,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
-import { CreateTestDto } from './dto/create-test.dto';
+import { CreateTestDto, EditTestDto } from './dto/createTestDto';
 import { Request } from 'express';
 import { TestService } from './tests.service';
 import CheckOwnership from '../../decorators/check-ownership.decorator';
@@ -88,8 +88,17 @@ export class TestsController {
   @Delete(':id')
   async softDeleteTest() {}
 
-  @Put(':id')
-  async editTest() {}
+  @CheckOwnership({
+    table: 'tests',
+    column: 'id',
+    foreignKey: 'teacherId',
+    pathOnReq: ['body', 'testId'],
+  })
+  @UseGuards(JwtAuthGuard, OwnerGuard)
+  @Put('edit')
+  async editTest(@Body() editTestDto: EditTestDto, @Req() req: Request) {
+    return await this.testService.editTest(editTestDto, req);
+  }
 
   @Get(':id/question/:questionId')
   @UseGuards(AccessTokenGuard)

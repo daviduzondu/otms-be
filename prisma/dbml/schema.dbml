@@ -156,6 +156,21 @@ Table student_tokens {
   }
 }
 
+Table branding {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  testId String [not null]
+  addedBy String [not null]
+  field1 String
+  field2 String
+  field3 String
+
+  indexes {
+    (testId, addedBy) [unique]
+  }
+}
+
 Enum AttemptStatus {
   submitted
   unsubmitted
@@ -222,3 +237,7 @@ Ref: student_grading.testId > tests.id
 Ref: student_tokens.studentId > students.id
 
 Ref: student_tokens.testId > tests.id
+
+Ref: branding.testId > tests.id
+
+Ref: branding.addedBy > teachers.id

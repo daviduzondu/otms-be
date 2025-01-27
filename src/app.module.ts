@@ -21,6 +21,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import * as process from 'node:process';
 import { FirebaseModule } from './modules/firebase/firebase.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { BrandingModule } from './modules/branding/branding.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     StorageModule,
     FirebaseModule,
     AnalyticsModule,
+    BrandingModule,
   ],
   controllers: [AppController],
 

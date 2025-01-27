@@ -6,6 +6,16 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 import type { AttemptStatus, MediaType, QuestionType, Platform } from "./enums";
 
+export type branding = {
+    id: GeneratedAlways<string>;
+    createdAt: Generated<Timestamp>;
+    updatedAt: Generated<Timestamp>;
+    testId: string;
+    addedBy: string;
+    field1: string | null;
+    field2: string | null;
+    field3: string | null;
+};
 export type classes = {
     id: GeneratedAlways<string>;
     name: string;
@@ -134,6 +144,7 @@ export type tests = {
     platform: Generated<Platform>;
 };
 export type DB = {
+    branding: branding;
     classes: classes;
     media: media;
     questions: questions;

@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectKysesly } from '../kysesly/decorators/inject-repository';
 import { Database } from '../kysesly/database';
-import { CreateTestDto } from './dto/create-test.dto';
+import { CreateTestDto, EditTestDto } from './dto/createTestDto';
 import { Request } from 'express';
 import { tests } from '../kysesly/kysesly-types/kysesly';
 import { CustomException } from '../../exceptions/custom.exception';
@@ -52,6 +52,23 @@ export class TestService {
 
     return {
       message: 'Test Creation Successful',
+      data: test,
+    };
+  }
+
+  async editTest(payload: EditTestDto, req: Request) {
+    const testId = payload.testId;
+    Object.assign(payload, {
+      teacherId: (req as any).user.id,
+    } as tests);
+
+    delete payload.testId;
+
+    // console.log(Object.assign(payload, {testId: null}));
+
+    const test = await this.db.updateTable('tests').set(payload).where('id', '=',testId).returningAll().executeTakeFirst();
+    return {
+      message: 'Test edited successfully',
       data: test,
     };
   }
@@ -558,6 +575,7 @@ export class TestService {
               'student_grading.point',
               'student_grading.isWithinTime',
               'student_grading.id',
+              jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'questions.mediaId').select(['id', 'url', 'type'])).as('media')
               // eb.case().when('questions.type', 'in',['mcq', 'trueOrFalse']).then(eb.case().when('student_grading.point', 'is', null).then(0).end()).end().as('point'),
             ]),
         ).as('answers'),
