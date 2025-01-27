@@ -142,7 +142,6 @@ model tests {
   test_attempts        test_attempts[]
   test_participants    test_participants[]
   teachers             teachers            @relation(fields: [teacherId], references: [id])
-  brandingEnable       Boolean             @default(false)
 }
 
 model test_attempts {

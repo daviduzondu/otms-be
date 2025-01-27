@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import BrandingDto from './dto/branding.dto';
@@ -9,10 +9,10 @@ import { BrandingService } from './branding.service';
 export class BrandingController {
   constructor(private readonly brandingService: BrandingService) {}
 
-  @Post('upload')
+  @Post('create')
   @UseInterceptors(FileInterceptor('image'))
   @UseGuards(JwtAuthGuard)
-  async uploadBranding(
+  async createBranding(
     @UploadedFile() file: Express.Multer.File,
     @Body() body: BrandingDto,
     @Req()
@@ -21,6 +21,20 @@ export class BrandingController {
     },
   ) {
     return await this.brandingService.addBranding(req.user.id, file, req, body);
+  }
+
+  @Put('edit')
+  @UseInterceptors(FileInterceptor('image'))
+  @UseGuards(JwtAuthGuard)
+  async editBranding(
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body() body: BrandingDto,
+    @Req()
+    req: Request & {
+      user: { id: string };
+    },
+  ) {
+    return await this.brandingService.updateBranding(req.user.id, file, req, body);
   }
 
   @Get()

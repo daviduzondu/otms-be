@@ -35,7 +35,7 @@ export class BrandingService {
           ...payload,
         }),
       )
-      .execute();
+      .executeTakeFirst();
 
     return {
       message: 'Branding updated successfully',
@@ -43,24 +43,46 @@ export class BrandingService {
     };
   }
 
+  async updateBranding(teacherId: string, file: Express.Multer.File, req: Request, payload: BrandingDto) {
+    let mediaId: string;
+    if (file) {
+      const {
+        data: { id },
+      } = await this.storageService.uploadFile(file, req);
+      mediaId = id;
+    }
+
+    for (const key in payload) {
+      if (payload[key] === undefined) {
+        payload[key] = null;
+      }
+    }
+
+    const data = await this.db
+      .updateTable('branding')
+      .set({
+        mediaId: mediaId ? mediaId : undefined,
+        ...payload,
+      })
+      .where('addedBy', '=', teacherId)
+      .returningAll()
+      .executeTakeFirst();
+
+    return await this.getBranding(teacherId);
+  }
+
   async getBranding(uploader: string) {
     const data = await this.db
       .selectFrom('branding')
       .where('branding.addedBy', '=', uploader)
-      .select(eb=>[
-        'branding.id',
-        'branding.field1',
-        'branding.field2',
-        'branding.field3',
-        jsonObjectFrom(eb.selectFrom('media').where("media.uploader", "=", uploader).select(['id',  'url']).limit(1)).as('media'),
-      ])
+      .select((eb) => ['branding.id', 'branding.field1', 'branding.field2', 'branding.field3', jsonObjectFrom(eb.selectFrom('media').where('media.uploader', '=', uploader).whereRef('media.id', '=', 'branding.mediaId').select(['id', 'url']).limit(1)).as('media')])
       .executeTakeFirstOrThrow(() => {
         throw new CustomException(`Branding not found for: ${uploader}`, HttpStatus.NOT_FOUND);
       });
 
     return {
-      message: "Branding retrieved successfully",
-      data
-    }
+      message: 'Branding retrieved successfully',
+      data,
+    };
   }
 }

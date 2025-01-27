@@ -142,7 +142,6 @@ export type tests = {
     durationMin: Generated<number>;
     showResultsAfterTest: Generated<boolean>;
     platform: Generated<Platform>;
-    brandingEnable: Generated<boolean>;
 };
 export type DB = {
     branding: branding;
