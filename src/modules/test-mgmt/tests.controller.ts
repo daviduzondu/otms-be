@@ -15,7 +15,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
-import { CreateTestDto, EditTestDto } from './dto/createTestDto';
+import { CreateTestDto, EditTestDto } from './dto/test.dto';
 import { Request } from 'express';
 import { TestService } from './tests.service';
 import CheckOwnership from '../../decorators/check-ownership.decorator';

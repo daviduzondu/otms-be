@@ -7,6 +7,7 @@ import { CustomException } from '../../exceptions/custom.exception';
 import { FirebaseStorageEngine } from './engine/firebase-storage.engine';
 import { FirebaseService } from '../firebase/firebase.service';
 import { ConfigService } from '@nestjs/config';
+import { BrandingController } from '../branding/branding.controller';
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { ConfigService } from '@nestjs/config';
       }),
     }),
   ],
-  controllers: [StorageController],
+  controllers: [StorageController, BrandingController],
   providers: [StorageService],
 })
 export class StorageModule {}

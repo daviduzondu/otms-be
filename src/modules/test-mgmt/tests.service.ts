@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectKysesly } from '../kysesly/decorators/inject-repository';
 import { Database } from '../kysesly/database';
-import { CreateTestDto, EditTestDto } from './dto/createTestDto';
+import { CreateTestDto, EditTestDto } from './dto/test.dto';
 import { Request } from 'express';
 import { tests } from '../kysesly/kysesly-types/kysesly';
 import { CustomException } from '../../exceptions/custom.exception';
