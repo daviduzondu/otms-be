@@ -7,7 +7,6 @@ import { tests } from '../kysesly/kysesly-types/kysesly';
 import { CustomException } from '../../exceptions/custom.exception';
 import { EmailService } from '../email/email.service';
 import { SendTestInvitationMailDto, SendTestResults, SendTestTokenDto } from './dto/mail-test.dto';
-import path from 'node:path';
 import { ConfigService } from '@nestjs/config';
 import { AddParticipantDto, RemoveParticipantDto } from './dto/participant.dto';
 import { customAlphabet } from 'nanoid';
@@ -34,11 +33,11 @@ export class TestService {
     return customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 12)();
   }
 
-  async revokeTest(testId: string, revoked: boolean){
-     await this.db.updateTable('tests').set('isRevoked', revoked).where('tests.id', '=',testId).execute();
-     return {
-       message: "Updated test status"
-     }
+  async revokeTest(testId: string, revoked: boolean) {
+    await this.db.updateTable('tests').set('isRevoked', revoked).where('tests.id', '=', testId).execute();
+    return {
+      message: 'Updated test status',
+    };
   }
 
   async createNewTest(payload: CreateTestDto, req: Request) {
@@ -46,7 +45,6 @@ export class TestService {
       code: await this.generateTestCode(),
       teacherId: (req as any).user.id,
     } as tests);
-
 
     const test = await this.db.insertInto('tests').values(payload).returningAll().executeTakeFirst();
 
@@ -71,7 +69,7 @@ export class TestService {
 
     // console.log(Object.assign(payload, {testId: null}));
 
-    const test = await this.db.updateTable('tests').set(payload).where('id', '=',testId).returningAll().executeTakeFirst();
+    const test = await this.db.updateTable('tests').set(payload).where('id', '=', testId).returningAll().executeTakeFirst();
     return {
       message: 'Test edited successfully',
       data: test,
@@ -80,7 +78,7 @@ export class TestService {
 
   async addParticipant(addParticipantDto: AddParticipantDto) {
     // Check if the student exists
-    let students = await this.db
+    const students = await this.db
       .selectFrom('students')
       .leftJoin('student_tokens', 'student_tokens.studentId', 'students.id')
       .select(['students.id as studentId', 'student_tokens.accessCode as accessCode', 'student_tokens.testId as testId'])
@@ -276,7 +274,7 @@ export class TestService {
 
       await trx.updateTable('test_attempts').set({ currentQuestionId: questionId }).where('test_attempts.studentId', '=', studentId).where('test_attempts.testId', '=', testId).executeTakeFirst();
 
-      const startAt = new Date()
+      const startAt = new Date();
       const { startedAt } = await trx
         .insertInto('student_grading')
         .values({
@@ -341,8 +339,7 @@ export class TestService {
         throw new CustomException('Question not found', HttpStatus.NOT_FOUND);
       });
 
-
-    let submission = await this.db.selectFrom('student_grading').selectAll().where('questionId', '=', questionId).where('testId', '=', testId).where('student_grading.studentId', '=', studentId).executeTakeFirst();
+    const submission = await this.db.selectFrom('student_grading').selectAll().where('questionId', '=', questionId).where('testId', '=', testId).where('student_grading.studentId', '=', studentId).executeTakeFirst();
 
     if (!submission?.startedAt) throw new CustomException('One or more parameters are missing', HttpStatus.BAD_REQUEST);
 
@@ -353,7 +350,6 @@ export class TestService {
       autoGraded: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type),
       point: (['mcq', 'trueOrFalse'] as QuestionType[]).includes(question.type) ? (String(answer) === question?.correctAnswer ? question.points : 0) : null,
     };
-
 
     // Make a submission
     const result = await this.db
@@ -448,13 +444,13 @@ export class TestService {
     const startedAt = existingAttempt?.startedAt || new Date();
     const endsAt = new Date(startedAt.getTime() + (test.durationMin + 5) * 60 * 1000);
     let questions = (() => (test.randomizeQuestions ? _.shuffle(test.questions) : test.questions))();
-    let currentQuestionId: string = existingAttempt?.currentQuestionId || questions[0].id;
+    const currentQuestionId: string = existingAttempt?.currentQuestionId || questions[0].id;
 
     if (existingAttempt) {
       questions = existingAttempt.questions;
       await this.db.updateTable('test_participants').set({ isTouched: true }).where('studentId', '=', studentId).where('testId', '=', testId).execute();
     } else {
-      let result = await this.db
+      const result = await this.db
         .insertInto('test_attempts')
         .values({
           testId,
@@ -520,16 +516,17 @@ export class TestService {
         throw new CustomException('Teacher not found!', HttpStatus.NOT_FOUND);
       });
 
+    const baseUrl = new ConfigService().get('FRONTEND_BASE_URL');
     await this.emailService.sendEmail({
       to: results.map((x) => ({ email: x.email, name: `${x.firstName} ${x.lastName}` })),
       subject: 'You have been invited to take a test!',
       templateName: 'test-invitation',
       context: results.map((x) => ({
-        testUrl: new URL(path.join(new ConfigService().get('FRONTEND_BASE_URL'), 't', `${test.code}?token=${x.accessCode}`)),
+        testUrl: new URL(`/t/${test.code}?token=${x.accessCode}`, baseUrl).toString(),
         studentName: `${x.firstName} ${x.lastName}`,
         teacherName: `${teacher.firstName} ${teacher.lastName}`,
         testName: test.title,
-        fallbackUrl: new URL(path.join(new ConfigService().get('FRONTEND_BASE_URL'), 't', `${test.code}?token=${x.accessCode}`)),
+        fallbackUrl: new URL(`/t/${test.code}?token=${x.accessCode}`, baseUrl).toString(),
         email: x.email,
       })),
     });
@@ -580,7 +577,7 @@ export class TestService {
               'student_grading.point',
               'student_grading.isWithinTime',
               'student_grading.id',
-              jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'questions.mediaId').select(['id', 'url', 'type'])).as('media')
+              jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'questions.mediaId').select(['id', 'url', 'type'])).as('media'),
               // eb.case().when('questions.type', 'in',['mcq', 'trueOrFalse']).then(eb.case().when('student_grading.point', 'is', null).then(0).end()).end().as('point'),
             ]),
         ).as('answers'),
@@ -627,68 +624,72 @@ export class TestService {
           .where((eb) => eb.or([eb('questions.isDeleted', '=', false), eb('questions.isDeleted', 'is', null)]))
           .select((eb) => [eb.fn.sum('questions.points').as('qc')])
           .as('totalTestPoints'),
-        jsonArrayFrom(eb.selectFrom('students')
-          .innerJoin('student_grading', 'student_grading.studentId', 'students.id')
-          .selectAll('students') // Select student-level data
-          .select((eb) => [
-            // Total points earned by the student
-            eb.fn.coalesce(eb.fn.sum('student_grading.point'), sql<number>`0`).as('finalScore'),
-            // Breakdown of counts for partially correct, correct, and incorrect answers
-            jsonObjectFrom(
-              eb
-                .selectFrom('student_grading')
-                .leftJoin('questions', 'questions.id', 'student_grading.questionId')
-                .select((eb) => [
-                  // Count of partially correct answers
-                  eb.fn
-                    .count(
-                      eb
-                        .case()
-                        .when(
-                          eb.and([
-                            eb('student_grading.point', '>', 0), // Points greater than 0
-                            eb('student_grading.point', '<', eb.ref('questions.points')), // Less than full points
-                          ]),
-                        )
-                        .then(1)
-                        .end(),
-                    )
-                    .as('partiallyCorrectAnswerCount'),
+        jsonArrayFrom(
+          eb
+            .selectFrom('students')
+            .innerJoin('student_grading', 'student_grading.studentId', 'students.id')
+            .selectAll('students') // Select student-level data
+            .select((eb) => [
+              // Total points earned by the student
+              eb.fn.coalesce(eb.fn.sum('student_grading.point'), sql<number>`0`).as('finalScore'),
+              // Breakdown of counts for partially correct, correct, and incorrect answers
+              jsonObjectFrom(
+                eb
+                  .selectFrom('student_grading')
+                  .leftJoin('questions', 'questions.id', 'student_grading.questionId')
+                  .select((eb) => [
+                    // Count of partially correct answers
+                    eb.fn
+                      .count(
+                        eb
+                          .case()
+                          .when(
+                            eb.and([
+                              eb('student_grading.point', '>', 0), // Points greater than 0
+                              eb('student_grading.point', '<', eb.ref('questions.points')), // Less than full points
+                            ]),
+                          )
+                          .then(1)
+                          .end(),
+                      )
+                      .as('partiallyCorrectAnswerCount'),
 
-                  // Count of correct answers
-                  eb.fn
-                    .count(
-                      eb
-                        .case()
-                        .when(
-                          eb('student_grading.point', '=', eb.ref('questions.points')), // Full points
-                        )
-                        .then(1)
-                        .end(),
-                    )
-                    .as('correctAnswerCount'),
+                    // Count of correct answers
+                    eb.fn
+                      .count(
+                        eb
+                          .case()
+                          .when(
+                            eb('student_grading.point', '=', eb.ref('questions.points')), // Full points
+                          )
+                          .then(1)
+                          .end(),
+                      )
+                      .as('correctAnswerCount'),
 
-                  // Count of incorrect answers
-                  eb.fn
-                    .count(
-                      eb
-                        .case()
-                        .when(
-                          eb('student_grading.point', '=', 0).or('student_grading.answer', 'is', null), // Zero points
-                        )
-                        .then(1)
-                        .end(),
-                    )
-                    .as('incorrectAnswerCount'),
-                ])
-                .where('questions.testId', '=', testId)
-                .where('student_grading.studentId', '=', studentId) // Match the student in the outer query
-                .where('student_grading.testId', '=', testId)
-            )
-              .as('breakdown')]).where('students.id', '=', studentId) // Limit to relevant students
-          .where('student_grading.testId', '=', testId) // Ensure grading data matches the test
-          .groupBy(['students.id']), // Group by unique student
-        ).as("results")])
+                    // Count of incorrect answers
+                    eb.fn
+                      .count(
+                        eb
+                          .case()
+                          .when(
+                            eb('student_grading.point', '=', 0).or('student_grading.answer', 'is', null), // Zero points
+                          )
+                          .then(1)
+                          .end(),
+                      )
+                      .as('incorrectAnswerCount'),
+                  ])
+                  .where('questions.testId', '=', testId)
+                  .where('student_grading.studentId', '=', studentId) // Match the student in the outer query
+                  .where('student_grading.testId', '=', testId),
+              ).as('breakdown'),
+            ])
+            .where('students.id', '=', studentId) // Limit to relevant students
+            .where('student_grading.testId', '=', testId) // Ensure grading data matches the test
+            .groupBy(['students.id']), // Group by unique student
+        ).as('results'),
+      ])
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('You cannot get your result through this means.', HttpStatus.NOT_FOUND);
       });
@@ -886,5 +887,4 @@ export class TestService {
     const endTime = addMinutes(startedAt, timeLimit);
     return isWithinInterval(now, { start: startedAt, end: endTime });
   }
-
 }
