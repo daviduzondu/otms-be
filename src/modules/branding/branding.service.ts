@@ -76,13 +76,11 @@ export class BrandingService {
       .selectFrom('branding')
       .where('branding.addedBy', '=', uploader)
       .select((eb) => ['branding.id', 'branding.field1', 'branding.field2', 'branding.field3', jsonObjectFrom(eb.selectFrom('media').where('media.uploader', '=', uploader).whereRef('media.id', '=', 'branding.mediaId').select(['id', 'url']).limit(1)).as('media')])
-      .executeTakeFirstOrThrow(() => {
-        throw new CustomException(`Branding not found for: ${uploader}`, HttpStatus.NOT_FOUND);
-      });
+      .executeTakeFirst();
 
     return {
       message: 'Branding retrieved successfully',
-      data,
+      data: data ?? null,
     };
   }
 }
