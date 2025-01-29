@@ -442,7 +442,7 @@ export class TestService {
     // Now push the data to the attempts table
     const existingAttempt = await this.db.selectFrom('test_attempts').where('studentId', '=', studentId).where('testId', '=', testId).selectAll().executeTakeFirst();
     const startedAt = existingAttempt?.startedAt || new Date();
-    const endsAt = new Date(startedAt.getTime() + (test.durationMin + 5) * 60 * 1000);
+    const endsAt = new Date(startedAt.getTime() + (test.durationMin + 1) * 60 * 1000);
     let questions = (() => (test.randomizeQuestions ? _.shuffle(test.questions) : test.questions))();
     const currentQuestionId: string = existingAttempt?.currentQuestionId || questions[0].id;
 
