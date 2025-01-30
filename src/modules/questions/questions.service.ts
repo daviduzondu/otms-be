@@ -11,12 +11,6 @@ export class QuestionsService {
   constructor(@InjectKysesly() private db: Database) {}
 
   async createQuestion(payload: CreateQuestionDto) {
-    // this.testService.getTestRecordByUser(payload.testId, req).catch(() => {
-    //   throw new CustomException(
-    //     'Access denied. You either do not have permission to modify this test or the test does not exist.',
-    //     HttpStatus.NOT_FOUND,
-    //   );
-    // });
     const existingAttempt = await this.db.selectFrom('test_attempts').selectAll().where('testId', '=', payload.testId).executeTakeFirst();
     if (existingAttempt) {
       throw new CustomException('You cannot add a new question because one or more students have attempted this test', HttpStatus.CONFLICT);
@@ -40,8 +34,6 @@ export class QuestionsService {
       .returning((eb) => [jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
       .executeTakeFirst();
 
-    // await this.db.updateTable('tests').set('updatedAt', question.updatedAt).where('tests.id', '=', question.testId).execute()
-
     return {
       message: 'Question added to test successfully',
       data: question,
@@ -61,8 +53,6 @@ export class QuestionsService {
       .returningAll()
       .returning((eb) => [jsonObjectFrom(eb.selectFrom('media').whereRef('media.id', '=', 'mediaId').select(['id', 'url', 'type'])).as('media')])
       .executeTakeFirst();
-
-    // await this.db.updateTable('tests').set('updatedAt', question.updatedAt).where('tests.id', '=', question.testId).execute()
 
     return {
       message: 'Question edited successfully',
