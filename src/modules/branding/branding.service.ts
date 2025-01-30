@@ -17,20 +17,20 @@ export class BrandingService {
 
   async addBranding(teacherId: string, file: Express.Multer.File, req: Request, payload: BrandingDto) {
     const {
-      data: { id },
+      data: media,
     } = await this.storageService.uploadFile(file, req);
 
     const data = await this.db
       .insertInto('branding')
       .values({
-        mediaId: id,
+        mediaId: media.id,
         addedBy: teacherId,
         ...payload,
       })
       .returningAll()
       .onConflict((oc) =>
         oc.columns(['addedBy']).doUpdateSet({
-          mediaId: id,
+          mediaId: media.id,
           addedBy: teacherId,
           ...payload,
         }),
@@ -39,7 +39,7 @@ export class BrandingService {
 
     return {
       message: 'Branding updated successfully',
-      data,
+      data: {...data, media: {...media, url:media.path}},
     };
   }
 
