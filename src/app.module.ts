@@ -42,6 +42,7 @@ import { BrandingModule } from './modules/branding/branding.module';
         FRONTEND_BASE_URL: Joi.string().required(),
         STORAGE_MODE: Joi.string().valid('remote', 'local').required(),
         EMAIL_MODE: Joi.string().valid('local', 'prod').required(),
+        MAILPIT_PORT: Joi.number().required(),
 
         // Conditional validation for production environment
       }).when(Joi.object({ STORAGE_MODE: Joi.string().valid('remote') }).unknown(), {
