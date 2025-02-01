@@ -7,6 +7,7 @@ import handlebars from 'handlebars';
 import fs from 'node:fs';
 import path from 'node:path';
 import { CustomException } from '../../exceptions/custom.exception';
+import { setTimeout } from 'node:timers/promises';
 
 @Injectable()
 export class EmailService {
@@ -45,12 +46,8 @@ export class EmailService {
         },
         body: JSON.stringify(data),
       });
-      const m = await response.json();
-      console.log(data);
-      console.log('Email sent successfully', m);
-    } catch (error) {
-      console.log('World');
-    }
+      await response.json();
+    } catch (error) {}
     return;
   }
 
@@ -73,6 +70,7 @@ export class EmailService {
     }));
 
     if (this.configService.get('EMAIL_MODE') === 'local') {
+      await setTimeout(1200);
       sendSmtpEmail.messageVersions.forEach(async (x) => {
         await this.sendMailPit({ subject: sendSmtpEmail.subject, html: x.htmlContent, to: x.to, from: this.sender, tags: [x.to[0].name] });
       });
@@ -80,7 +78,7 @@ export class EmailService {
 
     await this.brevoInstance.sendTransacEmail(sendSmtpEmail).catch((err) => {
       console.log(err);
-      throw new CustomException('Failed to send email', HttpStatus.BAD_REQUEST);
+      if (this.configService.get('EMAIL_MODE') === 'prod') throw new CustomException('Failed to send email', HttpStatus.BAD_REQUEST);
     });
 
     return {
