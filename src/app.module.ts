@@ -42,24 +42,29 @@ import { BrandingModule } from './modules/branding/branding.module';
         FRONTEND_BASE_URL: Joi.string().required(),
         STORAGE_MODE: Joi.string().valid('remote', 'local').required(),
         EMAIL_MODE: Joi.string().valid('local', 'prod').required(),
-        MAILPIT_PORT: Joi.number().required(),
 
         // Conditional validation for production environment
-      }).when(Joi.object({ STORAGE_MODE: Joi.string().valid('remote') }).unknown(), {
-        then: Joi.object({
-          TYPE: Joi.string().required(),
-          PROJECT_ID: Joi.string().required(),
-          PRIVATE_KEY_ID: Joi.string().required(),
-          PRIVATE_KEY: Joi.string().required(),
-          CLIENT_EMAIL: Joi.string().required(),
-          CLIENT_ID: Joi.string().required(),
-          AUTH_URI: Joi.string().required(),
-          TOKEN_URI: Joi.string().required(),
-          AUTH_PROVIDER_X509_CERT_URL: Joi.string().required(),
-          CLIENT_X509_CERT_URL: Joi.string().required(),
-          UNIVERSE_DOMAIN: Joi.string().required(),
+      })
+        .when(Joi.object({ STORAGE_MODE: Joi.string().valid('remote') }).unknown(), {
+          then: Joi.object({
+            TYPE: Joi.string().required(),
+            PROJECT_ID: Joi.string().required(),
+            PRIVATE_KEY_ID: Joi.string().required(),
+            PRIVATE_KEY: Joi.string().required(),
+            CLIENT_EMAIL: Joi.string().required(),
+            CLIENT_ID: Joi.string().required(),
+            AUTH_URI: Joi.string().required(),
+            TOKEN_URI: Joi.string().required(),
+            AUTH_PROVIDER_X509_CERT_URL: Joi.string().required(),
+            CLIENT_X509_CERT_URL: Joi.string().required(),
+            UNIVERSE_DOMAIN: Joi.string().required(),
+          }),
+        })
+        .when(Joi.object({ EMAIL_MODE: Joi.string().valid('local') }).unknown(), {
+          then: Joi.object({
+            MAILPIT_PORT: Joi.number().required(),
+          }),
         }),
-      }),
     }),
     JwtModule.register({
       global: true,
