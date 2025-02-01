@@ -27,6 +27,9 @@ async function bootstrap() {
     detect(Number(process.env.MAILPIT_PORT))
       .then((realPort) => {
         if (Number(process.env.MAILPIT_PORT) == realPort) {
+          console.log(`Mailpit is not running or not detected on port ${process.env.MAILPIT_PORT}. 
+          Start your mailpit server using the following command:
+          mailpit --database /path/to/database.db`);
           throw new Error('Failed to detect Mailpit');
         }
       })
