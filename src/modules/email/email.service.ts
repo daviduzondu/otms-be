@@ -18,7 +18,6 @@ export class EmailService {
     private readonly brevoInstance: TransactionalEmailsApi,
   ) {
     handlebars.registerHelper('required', function (variable) {
-      console.log(variable)
       if (variable === undefined || variable === null) {
         throw new Error(`Missing required variable`);
       }
@@ -35,6 +34,24 @@ export class EmailService {
       throw new Error('Error compiling MJML template');
     }
     return html;
+  }
+
+  async sendMailPit(data) {
+    try {
+      const response = await fetch('http://localhost:8025/api/v1/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      const m = await response.json();
+      console.log(data);
+      console.log('Email sent successfully', m);
+    } catch (error) {
+      console.log('World');
+    }
+    return;
   }
 
   async sendEmail(payload: { to: Array<{ email: string; name: string }>; context: any; subject: string; templateName: string }) {
@@ -54,6 +71,12 @@ export class EmailService {
       ],
       htmlContent: this.compileTemplate(template, payload.context.filter(({ email }) => email === x.email)[0]),
     }));
+
+    if (this.configService.get('EMAIL_MODE') === 'local') {
+      sendSmtpEmail.messageVersions.forEach(async (x) => {
+        await this.sendMailPit({ subject: sendSmtpEmail.subject, html: x.htmlContent, to: x.to, from: this.sender, tags: [x.to[0].name] });
+      });
+    }
 
     await this.brevoInstance.sendTransacEmail(sendSmtpEmail).catch((err) => {
       console.log(err);

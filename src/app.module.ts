@@ -41,6 +41,7 @@ import { BrandingModule } from './modules/branding/branding.module';
         BREVO_API_KEY: Joi.string().required(),
         FRONTEND_BASE_URL: Joi.string().required(),
         STORAGE_MODE: Joi.string().valid('remote', 'local').required(),
+        EMAIL_MODE: Joi.string().valid('local', 'prod').required(),
 
         // Conditional validation for production environment
       }).when(Joi.object({ STORAGE_MODE: Joi.string().valid('remote') }).unknown(), {
