@@ -152,22 +152,32 @@ export class UsersService {
       .selectFrom('students')
       .innerJoin('student_tokens', 'student_tokens.studentId', 'students.id')
       .innerJoin('tests', 'tests.id', 'student_tokens.testId')
-      .innerJoin('test_participants', join=>join.onRef('test_participants.studentId', '=', 'student_tokens.studentId').onRef('test_participants.testId', '=', 'student_tokens.testId'))
+      .innerJoin('test_participants', (join) => join.onRef('test_participants.studentId', '=', 'student_tokens.studentId').onRef('test_participants.testId', '=', 'student_tokens.testId'))
       .where('student_tokens.accessCode', '=', accessCode)
       .selectAll()
-      .select((eb) => ['test_participants.isTouched as isTouched',
-        eb.case().when(eb('tests.showResultsAfterTest', '=', true).and(
-          eb.not(
-            eb.exists(
-              eb
-                .selectFrom('questions')
-                .select('id') // Just selecting a column to check existence
-                .whereRef('questions.testId', '=', 'tests.id')
-                .where('questions.type', 'in', ['essay', 'shortAnswer']),
+      .select((eb) => [
+        'test_participants.isTouched as isTouched',
+        eb
+          .case()
+          .when(
+            eb('tests.showResultsAfterTest', '=', true).and(
+              eb.not(
+                eb.exists(
+                  eb
+                    .selectFrom('questions')
+                    .select('id') // Just selecting a column to check existence
+                    .whereRef('questions.testId', '=', 'tests.id')
+                    .where('questions.type', 'in', ['essay', 'shortAnswer']),
+                ),
+              ),
             ),
-          ),
-        )).then(true).else(false).end().as('resultReady'),
-        jsonObjectFrom(eb.selectFrom('tests').where('tests.isDeleted', '=', false).whereRef('tests.id', '=', 'student_tokens.testId').selectAll()).as('testInfo')])
+          )
+          .then(true)
+          .else(false)
+          .end()
+          .as('resultReady'),
+        jsonObjectFrom(eb.selectFrom('tests').where('tests.isDeleted', '=', false).whereRef('tests.id', '=', 'student_tokens.testId').selectAll()).as('testInfo'),
+      ])
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('Failed to retrieve student information. Contact teacher for help.', HttpStatus.NOT_FOUND);
       });

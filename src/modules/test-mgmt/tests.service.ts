@@ -424,6 +424,7 @@ export class TestService {
         'teacherId',
         'durationMin',
         'id',
+        'isRevoked',
         'randomizeQuestions',
         jsonArrayFrom(
           eb
@@ -448,8 +449,10 @@ export class TestService {
 
     if (existingAttempt) {
       questions = existingAttempt.questions;
-      await this.db.updateTable('test_participants').set({ isTouched: true }).where('studentId', '=', studentId).where('testId', '=', testId).execute();
     } else {
+      if (test.isRevoked) {
+        throw new CustomException('Sorry, this test is not accepting responses at this time.', HttpStatus.BAD_REQUEST);
+      }
       const result = await this.db
         .insertInto('test_attempts')
         .values({
@@ -463,8 +466,8 @@ export class TestService {
         .returning('questions')
         .onConflict((oc) => oc.columns(['testId', 'studentId']).doNothing())
         .executeTakeFirst();
-
       questions = result.questions;
+      await this.db.updateTable('test_participants').set({ isTouched: true }).where('studentId', '=', studentId).where('testId', '=', testId).execute();
     }
 
     return {
