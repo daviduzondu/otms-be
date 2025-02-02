@@ -519,7 +519,7 @@ export class TestService {
     const baseUrl = new ConfigService().get('FRONTEND_BASE_URL');
     await this.emailService.sendEmail({
       to: results.map((x) => ({ email: x.email, name: `${x.firstName} ${x.lastName}` })),
-      subject: 'You have been invited to take a test!',
+      subject: `You have been invited to take a test! (${test.title})`,
       templateName: 'test-invitation',
       context: results.map((x) => ({
         testUrl: new URL(`/t/${test.code}?token=${x.accessCode}`, baseUrl).toString(),

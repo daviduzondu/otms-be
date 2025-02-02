@@ -1,10 +1,9 @@
-import { forwardRef, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectKysesly } from '../kysesly/decorators/inject-repository';
 import { Database } from '../kysesly/database';
 import { StorageService } from '../storage/storage.service';
 import { Request } from 'express';
 import BrandingDto from './dto/branding.dto';
-import { CustomException } from '../../exceptions/custom.exception';
 import { jsonObjectFrom } from 'kysely/helpers/postgres';
 
 @Injectable()
@@ -16,9 +15,7 @@ export class BrandingService {
   ) {}
 
   async addBranding(teacherId: string, file: Express.Multer.File, req: Request, payload: BrandingDto) {
-    const {
-      data: media,
-    } = await this.storageService.uploadFile(file, req);
+    const { data: media } = await this.storageService.uploadFile(file, req);
 
     const data = await this.db
       .insertInto('branding')
@@ -39,7 +36,7 @@ export class BrandingService {
 
     return {
       message: 'Branding updated successfully',
-      data: {...data, media: {...media, url:media.path}},
+      data: { ...data, media: { ...media, url: media.path } },
     };
   }
 
@@ -58,7 +55,7 @@ export class BrandingService {
       }
     }
 
-    const data = await this.db
+    await this.db
       .updateTable('branding')
       .set({
         mediaId: mediaId ? mediaId : undefined,
@@ -81,6 +78,18 @@ export class BrandingService {
     return {
       message: 'Branding retrieved successfully',
       data: data ?? null,
+    };
+  }
+
+  async removeBranding(uploader: string) {
+    await this.db.transaction().execute(async (trx) => {
+      const { mediaId } = await trx.selectFrom('branding').where('addedBy', '=', uploader).select('mediaId').executeTakeFirst();
+      await trx.deleteFrom('branding').where('addedBy', '=', uploader).execute();
+      await trx.deleteFrom('media').where('id', '=', mediaId).execute();
+    });
+
+    return {
+      message: 'Branding removed successfully',
     };
   }
 }
