@@ -93,7 +93,6 @@ export class AnalyticsService {
                   )
                   .select(['student_grading.id', 'students.firstName as firstName', 'students.lastName as lastName', 'student_grading.point', 'student_grading.answer', 'student_grading.submittedAt'])
                   .where('student_grading.testId', '=', testId)
-                  .where((eb) => eb('student_grading.answer', 'is not', null))
                   .whereRef('student_grading.questionId', '=', 'questions.id'),
               ).as('responses'),
               eb.fn.avg(sql`EXTRACT(EPOCH FROM ("student_grading"."submittedAt" - "student_grading"."startedAt"))`).as('averageTimeSpentInSeconds'),
@@ -120,12 +119,8 @@ export class AnalyticsService {
       .innerJoin('student_grading', (join) => join.onRef('student_grading.testId', '=', 'tests.id'))
       .where('test_attempts.studentId', '=', studentId) // Filter by the student's ID
       .selectAll('tests') // Select all columns from the "tests" table
-      .select((eb) => [eb.fn.sum('student_grading.point').as('totalPoints'),
-
-        'test_attempts.startedAt',
-        eb.fn.coalesce(eb.ref('test_attempts.submittedAt'), eb.ref('test_attempts.endsAt')).as('submittedAt'),
-      ])
-      .groupBy(['test_attempts.submittedAt','test_attempts.startedAt', 'tests.id', 'test_attempts.endsAt'])
+      .select((eb) => [eb.fn.sum('student_grading.point').as('totalPoints'), 'test_attempts.startedAt', eb.fn.coalesce(eb.ref('test_attempts.submittedAt'), eb.ref('test_attempts.endsAt')).as('submittedAt')])
+      .groupBy(['test_attempts.submittedAt', 'test_attempts.startedAt', 'tests.id', 'test_attempts.endsAt'])
       .execute();
 
     return {
