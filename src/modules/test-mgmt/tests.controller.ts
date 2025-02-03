@@ -1,19 +1,4 @@
-import {
-  Body,
-  ClassSerializerInterceptor,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Post,
-  Put,
-  Query,
-  Req,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Put, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CreateTestDto, EditTestDto } from './dto/test.dto';
 import { Request } from 'express';
@@ -57,7 +42,7 @@ export class TestsController {
     pathOnReq: ['params', 'id'],
   })
   @UseGuards(JwtAuthGuard, OwnerGuard)
-  async revokeTest(@Param('id', ParseUUIDPipe) id:string, @Body() payload: RevokeTestDto) {
+  async revokeTest(@Param('id', ParseUUIDPipe) id: string, @Body() payload: RevokeTestDto) {
     return await this.testService.revokeTest(id, payload.revoked);
   }
 
@@ -176,7 +161,7 @@ export class TestsController {
     pathOnReq: ['body', 'testId'],
   })
   @UseGuards(JwtAuthGuard, OwnerGuard)
-  async sendResultToEmail(@Req() req, @Body() payload: SendTestResults){
+  async sendResultToEmail(@Req() req, @Body() payload: SendTestResults) {
     return await this.testService.sendResultToEmail(req, payload);
   }
 
@@ -197,9 +182,9 @@ export class TestsController {
     return await this.testService.sendTokenToEmail(payload);
   }
 
-  @Get(":id/result")
+  @Get(':id/result')
   @UseGuards(AccessTokenGuard)
-  async getTestResult(@Req() req: Request & { student: { id: string }; }, @Param('id', ParseUUIDPipe) testId: string){
+  async getTestResult(@Req() req: Request & { student: { id: string } }, @Param('id', ParseUUIDPipe) testId: string) {
     return await this.testService.getResult(testId, req.student.id);
   }
 }

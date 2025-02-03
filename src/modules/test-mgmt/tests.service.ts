@@ -279,6 +279,7 @@ export class TestService {
         .insertInto('student_grading')
         .values({
           startedAt: startAt,
+          submittedAt: question.timeLimit ? addMinutes(startAt, question.timeLimit) : undefined, // If the question has a time limit, set the end time
           isTouched: true,
           studentId,
           testId,
@@ -319,7 +320,7 @@ export class TestService {
       });
 
     const endsAt = new Date(testAttempt.endsAt);
-    const now = new Date();
+    let now = new Date();
 
     // Validate test attempt
     if (testAttempt.status === 'submitted') {
@@ -341,12 +342,14 @@ export class TestService {
 
     const submission = await this.db.selectFrom('student_grading').selectAll().where('questionId', '=', questionId).where('testId', '=', testId).where('student_grading.studentId', '=', studentId).executeTakeFirst();
 
+    console.log('submission is:', submission);
     if (!submission?.startedAt) throw new CustomException('One or more parameters are missing', HttpStatus.BAD_REQUEST);
 
+    now = new Date();
     const payload = {
       startedAt: submission.startedAt,
-      submittedAt: new Date(),
-      isWithinTime: question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit + 2) : this.isWithinTime(testAttempt.startedAt, testAttempt.durationMin + 2),
+      submittedAt: question.timeLimit ? (this.isWithinTime(submission.startedAt, question.timeLimit) ? now : submission.submittedAt) : now,
+      isWithinTime: question.timeLimit ? this.isWithinTime(submission.startedAt, question.timeLimit) : this.isWithinTime(testAttempt.startedAt, testAttempt.durationMin + 2),
       autoGraded: (<QuestionType[]>['mcq', 'trueOrFalse']).includes(question.type),
       point: (['mcq', 'trueOrFalse'] as QuestionType[]).includes(question.type) ? (String(answer) === question?.correctAnswer ? question.points : 0) : null,
     };
