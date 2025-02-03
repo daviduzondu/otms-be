@@ -7,7 +7,6 @@ import handlebars from 'handlebars';
 import fs from 'node:fs';
 import path from 'node:path';
 import { CustomException } from '../../exceptions/custom.exception';
-import { setTimeout } from 'node:timers/promises';
 
 @Injectable()
 export class EmailService {
@@ -70,7 +69,6 @@ export class EmailService {
     }));
 
     if (this.configService.get('EMAIL_MODE') === 'local') {
-      await setTimeout(1200);
       sendSmtpEmail.messageVersions.forEach(async (x) => {
         await this.sendMailPit({ subject: sendSmtpEmail.subject, html: x.htmlContent, to: x.to, from: this.sender, tags: [x.to[0].name] });
       });
@@ -81,6 +79,7 @@ export class EmailService {
       if (this.configService.get('EMAIL_MODE') === 'prod') throw new CustomException('Failed to send email', HttpStatus.BAD_REQUEST);
     });
 
+    console.log(`Email sent successfully for test: (${payload.context[0].testName})`);
     return {
       message: 'Email sent successfully',
     };
