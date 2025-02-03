@@ -606,7 +606,7 @@ export class TestService {
       .innerJoin('test_attempts', 'test_attempts.testId', 'tests.id')
       .selectAll('tests')
       .where('testId', '=', testId)
-      .where('test_attempts.endsAt', '<', new Date())
+      .where((eb) => eb('test_attempts.endsAt', '<', new Date()).or('test_attempts.status', '=', 'submitted'))
       .where((eb) =>
         eb('tests.showResultsAfterTest', '=', true).and(
           eb.not(
