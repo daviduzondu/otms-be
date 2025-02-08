@@ -23,18 +23,11 @@ export class AnalyticsService {
               .selectFrom('student_grading')
               .innerJoin('tests', (join) => join.onRef('student_grading.testId', '=', 'tests.id').on('tests.teacherId', '=', teacherId))
               .innerJoin('students', (join) => join.onRef('students.id', '=', 'student_grading.studentId').on('students.addedBy', '=', teacherId))
-              .innerJoin('questions', (join) => join.onRef('questions.testId', '=', 'tests.id').on('questions.isDeleted', '=', false))
-              .select((eb) => ['student_grading.testId', eb.fn.sum('student_grading.point').as('earnedPoints'), eb.fn.sum('questions.points').as('possiblePoints')])
+              .select((eb) => ['student_grading.testId', eb.fn.avg('student_grading.point').as('avgScore')])
               .groupBy('student_grading.testId')
               .as('testAverages'),
           )
-          .select((eb) =>
-            eb.fn
-              .avg(
-                eb('earnedPoints', '/', 'possiblePoints'), // Per-test percentage before averaging
-              )
-              .as('averagePerformance'),
-          )
+          .select((eb) => eb.fn.avg('avgScore').as('averagePerformance'))
           .as('averagePerformance'),
         eb
           .selectFrom('student_grading')
@@ -54,10 +47,9 @@ export class AnalyticsService {
         throw new CustomException('Failed to retrieve data');
       });
 
-    const rawAverage = Number(data.averagePerformance);
     return {
       message: 'Dashboard summary retrieved successfully',
-      data: { ...data, totalStudents: Number(data.totalStudents), averagePerformance: rawAverage < 1 ? rawAverage * 100 : rawAverage, classes: Number(data.classes), testCount: Number(data.testCount), x: (Number(data.totalPointsEarned) / Number(data.totalPossiblePoints)) * 100 },
+      data: { ...data, totalStudents: Number(data.totalStudents), averagePerformance: Number(data.averagePerformance) * 10, classes: Number(data.classes), testCount: Number(data.testCount), x: (Number(data.totalPointsEarned) / Number(data.totalPossiblePoints)) * 100 },
     };
   }
 
