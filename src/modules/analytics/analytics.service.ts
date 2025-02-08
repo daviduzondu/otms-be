@@ -37,7 +37,7 @@ export class AnalyticsService {
 
     return {
       message: 'Dashboard summary retrieved successfully',
-      data: { ...data, totalStudents: Number(data.totalStudents), classes: Number(data.classes), testCount: Number(data.testCount), averagePerformance: (Number(data.totalPointsEarned) / Number(data.totalPossiblePoints)) * 100, totalPointsEarned: undefined, totalPossiblePoints: undefined },
+      data: { ...data, totalStudents: Number(data.totalStudents), classes: Number(data.classes), testCount: Number(data.testCount), averagePerformance: (Number(data.totalPointsEarned) / Number(data.totalPossiblePoints)) * 100 },
     };
   }
 
