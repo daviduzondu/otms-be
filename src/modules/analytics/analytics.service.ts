@@ -18,6 +18,18 @@ export class AnalyticsService {
         eb.selectFrom('classes').where('classes.teacherId', '=', teacherId).select(eb.fn.count('id').as('c')).as('classes'),
         eb.selectFrom('students').where('students.addedBy', '=', teacherId).select(eb.fn.count('id').as('c')).as('totalStudents'),
         eb
+          .selectFrom((sub) =>
+            sub
+              .selectFrom('student_grading')
+              .innerJoin('tests', (join) => join.onRef('student_grading.testId', '=', 'tests.id').on('tests.teacherId', '=', teacherId))
+              .innerJoin('students', (join) => join.onRef('students.id', '=', 'student_grading.studentId').on('students.addedBy', '=', teacherId))
+              .select((eb) => ['student_grading.testId', eb.fn.avg('student_grading.point').as('avgScore')])
+              .groupBy('student_grading.testId')
+              .as('testAverages'),
+          )
+          .select((eb) => eb.fn.avg('avgScore').as('averagePerformance'))
+          .as('averagePerformance'),
+        eb
           .selectFrom('student_grading')
           .innerJoin('students', (join) => join.onRef('students.id', '=', 'student_grading.studentId').on('students.addedBy', '=', teacherId))
           .select((eb) => eb.fn.sum('student_grading.point').as('tpe'))
@@ -37,7 +49,7 @@ export class AnalyticsService {
 
     return {
       message: 'Dashboard summary retrieved successfully',
-      data: { ...data, totalStudents: Number(data.totalStudents), classes: Number(data.classes), testCount: Number(data.testCount), averagePerformance: (Number(data.totalPointsEarned) / Number(data.totalPossiblePoints)) * 100 },
+      data: { ...data, totalStudents: Number(data.totalStudents), avgScore: data.averagePerformance, classes: Number(data.classes), testCount: Number(data.testCount), averagePerformance: (Number(data.totalPointsEarned) / Number(data.totalPossiblePoints)) * 100 },
     };
   }
 
