@@ -49,7 +49,7 @@ export class AnalyticsService {
 
     return {
       message: 'Dashboard summary retrieved successfully',
-      data: { ...data, totalStudents: Number(data.totalStudents), avgScore: data.averagePerformance, classes: Number(data.classes), testCount: Number(data.testCount), averagePerformance: (Number(data.totalPointsEarned) / Number(data.totalPossiblePoints)) * 100 },
+      data: { ...data, totalStudents: Number(data.totalStudents), averagePerformance: Number(data.averagePerformance) * 100, classes: Number(data.classes), testCount: Number(data.testCount), x: (Number(data.totalPointsEarned) / Number(data.totalPossiblePoints)) * 100 },
     };
   }
 
