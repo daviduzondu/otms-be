@@ -14,17 +14,17 @@ export class AnalyticsService {
       .selectFrom('teachers')
       .where('teachers.id', '=', teacherId)
       .select((eb) => [
-        eb.selectFrom('tests').whereRef('tests.teacherId', '=', 'teachers.id').where('tests.isDeleted', '=', false).select(eb.fn.count('id').as('c')).as('testCount'),
-        eb.selectFrom('classes').whereRef('classes.teacherId', '=', 'teachers.id').select(eb.fn.count('id').as('c')).as('classes'),
-        eb.selectFrom('students').whereRef('students.addedBy', '=', 'teachers.id').select(eb.fn.count('id').as('c')).as('totalStudents'),
+        eb.selectFrom('tests').where('tests.teacherId', '=', teacherId).where('tests.isDeleted', '=', false).select(eb.fn.count('id').as('c')).as('testCount'),
+        eb.selectFrom('classes').where('classes.teacherId', '=', teacherId).select(eb.fn.count('id').as('c')).as('classes'),
+        eb.selectFrom('students').where('students.addedBy', '=', teacherId).select(eb.fn.count('id').as('c')).as('totalStudents'),
         eb
           .selectFrom('student_grading')
-          .innerJoin('students', (join) => join.onRef('students.id', '=', 'student_grading.studentId').onRef('students.addedBy', '=', 'teachers.id'))
+          .innerJoin('students', (join) => join.onRef('students.id', '=', 'student_grading.studentId').on('students.addedBy', '=', teacherId))
           .select((eb) => eb.fn.sum('student_grading.point').as('tpe'))
           .as('totalPointsEarned'),
         eb
           .selectFrom('questions')
-          .innerJoin('tests', (join) => join.onRef('questions.testId', '=', 'tests.id').onRef('tests.teacherId', '=', 'teachers.id'))
+          .innerJoin('tests', (join) => join.onRef('questions.testId', '=', 'tests.id').on('tests.teacherId', '=', teacherId))
           .where((eb) => {
             return eb('questions.isDeleted', '=', false).or('questions.isDeleted', '=', null);
           })
