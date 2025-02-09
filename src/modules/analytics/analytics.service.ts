@@ -27,19 +27,19 @@ export class AnalyticsService {
             .groupBy('student_grading.testId'),
         ).as('testAverages'),
 
-        eb
-          .selectFrom('student_grading')
-          .innerJoin('students', (join) => join.onRef('students.id', '=', 'student_grading.studentId').on('students.addedBy', '=', teacherId))
-          .select((eb) => eb.fn.sum('student_grading.point').as('tpe'))
-          .as('totalPointsEarned'),
-        eb
-          .selectFrom('questions')
-          .innerJoin('tests', (join) => join.onRef('questions.testId', '=', 'tests.id').on('tests.teacherId', '=', teacherId))
-          .where((eb) => {
-            return eb('questions.isDeleted', '=', false).or('questions.isDeleted', '=', null);
-          })
-          .select((eb) => eb.fn.sum('questions.points').as('tpp'))
-          .as('totalPossiblePoints'),
+        // eb
+        //   .selectFrom('student_grading')
+        //   .innerJoin('students', (join) => join.onRef('students.id', '=', 'student_grading.studentId').on('students.addedBy', '=', teacherId))
+        //   .select((eb) => eb.fn.sum('student_grading.point').as('tpe'))
+        //   .as('totalPointsEarned'),
+        // eb
+        //   .selectFrom('questions')
+        //   .innerJoin('tests', (join) => join.onRef('questions.testId', '=', 'tests.id').on('tests.teacherId', '=', teacherId))
+        //   .where((eb) => {
+        //     return eb('questions.isDeleted', '=', false).or('questions.isDeleted', '=', null);
+        //   })
+        //   .select((eb) => eb.fn.sum('questions.points').as('tpp'))
+        //   .as('totalPossiblePoints'),
       ])
       .executeTakeFirstOrThrow(() => {
         throw new CustomException('Failed to retrieve data');
@@ -63,7 +63,7 @@ export class AnalyticsService {
 
     return {
       message: 'Dashboard summary retrieved successfully',
-      data: { ...data, totalStudents: Number(data.totalStudents), averagePerformance: averagePerformancePercentage, classes: Number(data.classes), testCount: Number(data.testCount), x: (Number(data.totalPointsEarned) / Number(data.totalPossiblePoints)) * 100 },
+      data: { ...data, totalStudents: Number(data.totalStudents), averagePerformance: averagePerformancePercentage, classes: Number(data.classes), testCount: Number(data.testCount) },
     };
   }
 
