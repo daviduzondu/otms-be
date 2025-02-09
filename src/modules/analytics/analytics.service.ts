@@ -17,18 +17,16 @@ export class AnalyticsService {
         eb.selectFrom('tests').where('tests.teacherId', '=', teacherId).where('tests.isDeleted', '=', false).select(eb.fn.count('id').as('c')).as('testCount'),
         eb.selectFrom('classes').where('classes.teacherId', '=', teacherId).select(eb.fn.count('id').as('c')).as('classes'),
         eb.selectFrom('students').where('students.addedBy', '=', teacherId).select(eb.fn.count('id').as('c')).as('totalStudents'),
-        eb
-          .selectFrom((sub) =>
-            sub
-              .selectFrom('student_grading')
-              .innerJoin('tests', (join) => join.onRef('student_grading.testId', '=', 'tests.id').on('tests.teacherId', '=', teacherId))
-              .innerJoin('students', (join) => join.onRef('students.id', '=', 'student_grading.studentId').on('students.addedBy', '=', teacherId))
-              .select((eb) => ['student_grading.testId', eb.fn.avg('student_grading.point').as('avgScore')])
-              .groupBy('student_grading.testId')
-              .as('testAverages'),
-          )
-          .select((eb) => eb.fn.avg('avgScore').as('averagePerformance'))
-          .as('averagePerformance'),
+        jsonArrayFrom(
+          eb
+            .selectFrom('student_grading')
+            .innerJoin('tests', (join) => join.onRef('student_grading.testId', '=', 'tests.id').on('tests.teacherId', '=', teacherId))
+            .innerJoin('students', (join) => join.onRef('students.id', '=', 'student_grading.studentId').on('students.addedBy', '=', teacherId))
+            .innerJoin('questions', (join) => join.onRef('questions.testId', '=', 'tests.id').on('questions.isDeleted', '=', false))
+            .select((eb) => ['student_grading.testId as testId', eb.fn.sum('student_grading.point').as('earnedPoints'), eb.fn.sum('questions.points').as('possiblePoints')])
+            .groupBy('student_grading.testId'),
+        ).as('testAverages'),
+
         eb
           .selectFrom('student_grading')
           .innerJoin('students', (join) => join.onRef('students.id', '=', 'student_grading.studentId').on('students.addedBy', '=', teacherId))
@@ -47,9 +45,25 @@ export class AnalyticsService {
         throw new CustomException('Failed to retrieve data');
       });
 
+    let sumPercentages = 0;
+
+    for (const row of data.testAverages) {
+      // Convert the values to numbers, then compute the percentage for each test.
+      const earned = Number(row.earnedPoints);
+      const possible = Number(row.possiblePoints);
+
+      // Guard against division by zero.
+      const testPercentage = possible > 0 ? earned / possible : 0;
+      sumPercentages += testPercentage;
+    }
+
+    // Calculate the average fraction and convert to percentage (0 - 100).
+    const averagePerformanceFraction = data.testAverages.length > 0 ? sumPercentages / data.testAverages.length : 0;
+    const averagePerformancePercentage = averagePerformanceFraction * 100;
+
     return {
       message: 'Dashboard summary retrieved successfully',
-      data: { ...data, totalStudents: Number(data.totalStudents), averagePerformance: Number(data.averagePerformance) * 10, classes: Number(data.classes), testCount: Number(data.testCount), x: (Number(data.totalPointsEarned) / Number(data.totalPossiblePoints)) * 100 },
+      data: { ...data, totalStudents: Number(data.totalStudents), averagePerformance: averagePerformancePercentage, classes: Number(data.classes), testCount: Number(data.testCount), x: (Number(data.totalPointsEarned) / Number(data.totalPossiblePoints)) * 100 },
     };
   }
 
