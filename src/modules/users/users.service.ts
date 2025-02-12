@@ -5,7 +5,6 @@ import { CreateStudentDto } from './dto/student.dto';
 import { CustomException } from '../../exceptions/custom.exception';
 import { ClassService } from '../class/class.service';
 import { jsonObjectFrom } from 'kysely/helpers/postgres';
-import { sql } from 'kysely';
 
 @Injectable()
 export class UsersService {
