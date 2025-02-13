@@ -5,7 +5,6 @@ import { Database } from '../kysesly/database';
 import { CreateClassDto } from './dto/class.dto';
 import { CustomException } from '../../exceptions/custom.exception';
 import { AddStudentToClassDto } from '../users/dto/student.dto';
-import { sql } from 'kysely';
 
 @Injectable()
 @UseGuards(JwtAuthGuard)
@@ -33,13 +32,12 @@ export class ClassService {
   // }
 
   async getClasses(req, testId?: string) {
-    console.log(req.user.id)
     const classes = await this.db
       .selectFrom('classes')
-      .leftJoin('student_class', 'classes.id', 'classId')
+      .leftJoin('student_class', (join) => join.onRef('classes.id', '=', 'classId').on('student_class.removeAfter', '>=', new Date()))
       .leftJoin('students', 'students.id', 'studentId')
       .leftJoin('test_participants', (qb) => qb.onRef('test_participants.studentId', '=', 'student_class.studentId').on('test_participants.testId', '=', testId))
-      .select(({ eb, selectFrom }) => [
+      .select(({ eb }) => [
         'classes.id as id', // Ensure we're always selecting class.id as a fallback
         'classes.createdAt as createdAt',
         'name',
@@ -50,7 +48,7 @@ export class ClassService {
         'students.id as studentId',
         testId ? eb.case().when('test_participants.id', 'is not', null).then(true).else(false).end().as('isParticipant') : 'name',
         // sql`CASE WHEN test_participants.id IS NOT NULL THEN TRUE ELSE FALSE END`.as('isParticipant'),
-        testId ? 'test_participants.origin as origin': 'name',
+        testId ? 'test_participants.origin as origin' : 'name',
       ])
       .where('teacherId', '=', (req as any).user.id)
       .execute();
