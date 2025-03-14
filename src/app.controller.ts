@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { EmailService } from './modules/email/email.service';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 
 @Controller()
 export class AppController {
@@ -21,7 +21,7 @@ export class AppController {
   }
 
   @Post('webhook')
-  async distributeWebhook(@Body() payload, @Res() res: Response) {
+  async distributeWebhook(@Body() payload, @Res() res: Response, @Req() req: Request) {
     const wh1 = process.env.WH1;
     const wh2 = process.env.WH2;
     const wh3 = process.env.WH3;
@@ -35,6 +35,7 @@ export class AppController {
           fetch(url, {
             method: 'POST',
             headers: {
+              ...(req.headers as any),
               'Content-Type': 'application/json',
               'ngrok-skip-browser-warning': 'true',
             },
@@ -48,6 +49,7 @@ export class AppController {
       res.status(500).json({ error: 'Failed to distribute webhook' });
     }
   }
+
   // @Get('send-mail')
   // async sendMail() {
   //   return await this.emailService.sendEmail({
