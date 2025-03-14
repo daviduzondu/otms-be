@@ -1,4 +1,4 @@
-import { Controller, Get, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { EmailService } from './modules/email/email.service';
 import { Response } from 'express';
@@ -19,13 +19,14 @@ export class AppController {
   getServerTime() {
     return new Date().toISOString();
   }
-  @Get('webhook')
-  async distributeWebhook(@Req() req: Request, @Res() res: Response) {
+
+  @Post('webhook')
+  async distributeWebhook(@Body() payload, @Res() res: Response) {
     const wh1 = process.env.WH1;
     const wh2 = process.env.WH2;
     const wh3 = process.env.WH3;
 
-    const webhookUrls = ['https://b675-102-91-78-183.ngrok-free.app/api/whook', wh2, wh3].filter(Boolean);
+    const webhookUrls = [wh1, wh2, wh3].filter(Boolean);
     console.log('Sending a post request to ', webhookUrls);
 
     try {
@@ -37,7 +38,7 @@ export class AppController {
               'Content-Type': 'application/json',
               'ngrok-skip-browser-warning': 'true',
             },
-            body: JSON.stringify(req.body),
+            body: JSON.stringify(payload),
           }),
         ),
       );
