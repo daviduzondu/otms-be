@@ -27,23 +27,17 @@ export class AppController {
     const wh3 = process.env.WH3;
 
     const webhookUrls = [wh1, wh2, wh3].filter(Boolean);
-    console.log('Sending a post request to ', webhookUrls);
 
     try {
-      await Promise.all(
-        webhookUrls.map((url) =>
-          fetch(url, {
-            method: 'POST',
-            headers: {
-              ...(req.headers as any),
-              'Content-Type': 'application/json',
-              'ngrok-skip-browser-warning': 'true',
-            },
-            body: JSON.stringify(payload),
-          }),
-        ),
-      );
-      res.status(200).json({ message: 'Webhook distributed successfully' });
+      fetch(webhookUrls[0], {
+        method: 'POST',
+        headers: {
+          ...Object.fromEntries(Object.entries(req.headers).filter(([key, value]) => typeof value === 'string')),
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify(payload),
+      }),
+        res.status(200).json({ message: 'Webhook distributed successfully' });
     } catch (error) {
       console.error('Error distributing webhook:', error);
       res.status(500).json({ error: 'Failed to distribute webhook' });
