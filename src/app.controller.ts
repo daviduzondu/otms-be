@@ -27,12 +27,16 @@ export class AppController {
 
     const webhookUrls = [wh1, wh2, wh3].filter(Boolean);
     console.log('Sending a post request to ', webhookUrls);
+
     try {
       await Promise.all(
         webhookUrls.map((url) =>
           fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
             body: JSON.stringify(req.body),
           }),
         ),
@@ -43,7 +47,6 @@ export class AppController {
       res.status(500).json({ error: 'Failed to distribute webhook' });
     }
   }
-
   // @Get('send-mail')
   // async sendMail() {
   //   return await this.emailService.sendEmail({
