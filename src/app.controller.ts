@@ -25,7 +25,7 @@ export class AppController {
     const wh2 = process.env.WH2;
     const wh3 = process.env.WH3;
 
-    const webhookUrls = [wh1, wh2, wh3].filter(Boolean);
+    const webhookUrls = ['https://b675-102-91-78-183.ngrok-free.app/api/whook', wh2, wh3].filter(Boolean);
     console.log('Sending a post request to ', webhookUrls);
 
     try {
