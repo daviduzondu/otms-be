@@ -26,7 +26,7 @@ export class AppController {
     const wh3 = process.env.WH3;
 
     const webhookUrls = [wh1, wh2, wh3].filter(Boolean);
-
+    console.log('Sending a post request to ', webhookUrls);
     try {
       await Promise.all(
         webhookUrls.map((url) =>
