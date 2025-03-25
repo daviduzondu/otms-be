@@ -510,7 +510,7 @@ export class TestService {
       .execute();
 
     if (results.length === 0) {
-      throw new CustomException('Some students in this list do not exist', HttpStatus.NOT_FOUND);
+      throw new CustomException('Every student on the list has already taken this test.', HttpStatus.NOT_FOUND);
     }
 
     // Get the teacher
