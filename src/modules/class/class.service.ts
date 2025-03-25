@@ -50,7 +50,7 @@ export class ClassService {
         testId ? eb.case().when('test_participants.id', 'is not', null).then(true).else(false).end().as('isParticipant') : 'name',
         // sql`CASE WHEN test_participants.id IS NOT NULL THEN TRUE ELSE FALSE END`.as('isParticipant'),
         testId ? 'test_participants.origin as origin' : 'name',
-        testId ? eb.case().when('test_attempts.endsAt', '>=', new Date()).then(true).else(false).end().as('isTaken') : 'name',
+        testId ? eb.case().when('test_attempts.endsAt', '>=', new Date()).then(false).else(true).end().as('isSubmitted') : 'name',
       ])
       .where('teacherId', '=', (req as any).user.id)
       .execute();
