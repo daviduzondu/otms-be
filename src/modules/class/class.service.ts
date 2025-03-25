@@ -37,6 +37,7 @@ export class ClassService {
       .leftJoin('student_class', (join) => join.onRef('classes.id', '=', 'classId').on('student_class.removeAfter', '>=', new Date()))
       .leftJoin('students', 'students.id', 'studentId')
       .leftJoin('test_participants', (qb) => qb.onRef('test_participants.studentId', '=', 'student_class.studentId').on('test_participants.testId', '=', testId))
+      .leftJoin('test_attempts', (qb) => qb.onRef('test_attempts.studentId', '=', 'student_class.studentId').on('test_attempts.testId', '=', testId))
       .select(({ eb }) => [
         'classes.id as id', // Ensure we're always selecting class.id as a fallback
         'classes.createdAt as createdAt',
@@ -49,6 +50,7 @@ export class ClassService {
         testId ? eb.case().when('test_participants.id', 'is not', null).then(true).else(false).end().as('isParticipant') : 'name',
         // sql`CASE WHEN test_participants.id IS NOT NULL THEN TRUE ELSE FALSE END`.as('isParticipant'),
         testId ? 'test_participants.origin as origin' : 'name',
+        testId ? eb.case().when('test_attempts.endsAt', '>=', new Date()).then(true).else(false).end().as('isTaken') : 'name',
       ])
       .where('teacherId', '=', (req as any).user.id)
       .execute();
