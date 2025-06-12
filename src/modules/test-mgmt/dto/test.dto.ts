@@ -1,16 +1,5 @@
 import { Exclude } from 'class-transformer';
-import {
-  IsBoolean,
-  IsDateString,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Matches,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, Min } from 'class-validator';
 import { Platform } from 'src/modules/kysesly/kysesly-types/enums';
 import { PartialType } from '@nestjs/mapped-types';
 
@@ -62,7 +51,7 @@ export class CreateTestDto {
   updatedAt: string;
 }
 
-export class EditTestDto extends PartialType(CreateTestDto){
+export class EditTestDto extends PartialType(CreateTestDto) {
   @IsOptional()
   @IsNumber()
   @Min(30)

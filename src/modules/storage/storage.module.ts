@@ -12,7 +12,7 @@ import { BrandingModule } from '../branding/branding.module';
 
 @Module({
   imports: [
-    forwardRef(()=>BrandingModule),
+    forwardRef(() => BrandingModule),
     MulterModule.registerAsync({
       imports: [],
       inject: [FirebaseService, ConfigService], // Inject FirebaseService into the MulterModule
@@ -36,6 +36,6 @@ import { BrandingModule } from '../branding/branding.module';
   ],
   controllers: [StorageController, BrandingController],
   providers: [StorageService],
-  exports: [StorageService]
+  exports: [StorageService],
 })
 export class StorageModule {}

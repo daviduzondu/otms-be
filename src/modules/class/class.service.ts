@@ -30,7 +30,6 @@ export class ClassService {
   //     data: formattedClass,
   //   };
   // }
-
   async getClasses(req, testId?: string) {
     const classes = await this.db
       .selectFrom('classes')

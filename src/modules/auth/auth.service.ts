@@ -56,6 +56,7 @@ export class AuthService {
       firstName: teacher.firstName,
       lastName: teacher.lastName,
       photoUrl: teacher.photoId,
+      // tokenExpiry: this.jwtService.decode()
       accessToken: this.jwtService.sign(Object.assign(teacher, { passport: undefined })),
     };
   }
